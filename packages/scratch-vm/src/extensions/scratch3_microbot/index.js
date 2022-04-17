@@ -387,6 +387,17 @@ class MicrobitRobot {
                         this.scratch_vm.constructor.PERIPHERAL_CONNECTED
                     );
 
+                    if (this._mServices.buttonService) {
+                        console.log("starting button service")
+                        this._mServices.buttonService.addEventListener(
+                            "buttonastatechanged",
+                            this.updateSensors.bind(this)
+                        );
+                        this._mServices.buttonService.addEventListener(
+                            "buttonbstatechanged",
+                            this.updateSensors.bind(this)
+                        );
+                    }
                     if (this._mServices.uartService) {
                         this._mServices.uartService.addEventListener(
                             "receiveText",
@@ -453,8 +464,10 @@ class MicrobitRobot {
             }
         }
         console.log("Set led matrix: " + ledMatrix);
-        if (this._mServices)
+        if (this._mServices){
+            console.log(this);
             this._mServices.ledService.writeMatrixState(ledMatrix);
+        }
     }
 
     writeLedString(args) {
@@ -542,20 +555,26 @@ class MicrobitRobot {
      */
     updateSensors(event) {
         console.log("Got UART data: " + event.detail);
-        //console.log(event);
-        let readings = event.detail.split(",");
-        if (readings.length == 5) {
-            this.dist_read = parseInt(readings[0].substring(4));
-            this.a_button = parseInt(readings[1]);
-            this.b_button = parseInt(readings[2]);
-            this.left_line = parseInt(readings[3]);
-            this.right_line = parseInt(readings[4]);
+        console.log(event);
+        if (event.type == "buttonbstatechanged") {
+            this.b_button = event.detail;
         }
-        if (isNaN(this.dist_read)) this.dist_read = 0;
-        if (isNaN(this.a_button)) this.a_button = 0;
-        if (isNaN(this.b_button)) this.b_button = 0;
-        if (isNaN(this.left_line)) this.left_line = 0;
-        if (isNaN(this.right_line)) this.right_line = 0;
+        else if (event.type == "buttonastatechanged") {
+            this.a_button = event.detail;
+        }
+        // let readings = event.detail.split(",");
+        // if (readings.length == 5) {
+        //     this.dist_read = parseInt(readings[0].substring(4));
+        //     this.a_button = parseInt(readings[1]);
+        //     this.b_button = parseInt(readings[2]);
+        //     this.left_line = parseInt(readings[3]);
+        //     this.right_line = parseInt(readings[4]);
+        // }
+        // if (isNaN(this.dist_read)) this.dist_read = 0;
+        // if (isNaN(this.a_button)) this.a_button = 0;
+        // if (isNaN(this.b_button)) this.b_button = 0;
+        // if (isNaN(this.left_line)) this.left_line = 0;
+        // if (isNaN(this.right_line)) this.right_line = 0;
     }
 
     /**
@@ -565,7 +584,7 @@ class MicrobitRobot {
     readDistance() {
         let current_time = Date.now();
         if (current_time - this.last_reading_time > 250) {
-            console.log("Updating sensors");
+            console.log("Updating read distance sensors");
             // send command to trigger distance read
             if (this._mServices) this._mServices.uartService.sendText("W#");
             this.last_reading_time = current_time;
@@ -584,15 +603,17 @@ class MicrobitRobot {
      * @returns {string} t
      */
     readButtonStatus(args) {
-        let current_time = Date.now();
-        if (current_time - this.last_reading_time > 250) {
-            console.log("Updating sensors");
+        // let current_time = Date.now();
+        // if (current_time - this.last_reading_time > 250) {
+        //     console.log("Updating button sensors");
             // send command to trigger distance read
-            if (this._mServices) this._mServices.uartService.sendText("W#");
-            this.last_reading_time = current_time;
-        }
-
+        //     if (this._mServices) this._mServices.uartService.sendText("W#");
+        //     this.last_reading_time = current_time;
+        // }
+        // console.log(this._mServices.buttonService.readButtonAState());
+        // console.log(this._mServices.buttonService.readButtonBState());
         var state = args.BUTTON;
+        console.log(args);
         if (state == "A") {
             return this.a_button == 1;
         } else if (state == "B") {
@@ -620,7 +641,7 @@ class MicrobitRobot {
     readLineStatus(args) {
         let current_time = Date.now();
         if (current_time - this.last_reading_time > 250) {
-            console.log("Updating sensors");
+            console.log("Updating line status sensors");
             // send command to trigger distance read
             if (this._mServices) this._mServices.uartService.sendText("W#");
             this.last_reading_time = current_time;
