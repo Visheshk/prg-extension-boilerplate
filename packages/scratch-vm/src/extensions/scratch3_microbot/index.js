@@ -81,6 +81,7 @@ class MicrobitRobot {
         this.dist_read = 0;
         this.a_button = 0;
         this.b_button = 0;
+        this.accelerometer = null;
         this.left_line = 0;
         this.right_line = 0;
         this.last_reading_time = 0;
@@ -312,6 +313,33 @@ class MicrobitRobot {
                     },
                 },
                 {
+                    opcode: "readAccelx",
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: "arduinoBot.readAccelx",
+                        default: "Accelerometer x",
+                        description:
+                            "Get distance read from ultrasonic distance sensor",
+                    }),
+                },
+                {
+                    opcode: "readAccelerometer",
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: "doodlebot.readAccelerometer",
+                        default: "accelerometer [DIR]",
+                        description:
+                            "Get accelerometer reading from microbot",
+                    }),
+                    arguments: {
+                        DIR: {
+                            type: ArgumentType.String,
+                            menu: "ACC_GYRO_DIRS",
+                            defaultValue: 'x',
+                        },
+                    },
+                },
+                {
                     opcode: "readDistance",
                     blockType: BlockType.REPORTER,
                     text: formatMessage({
@@ -346,6 +374,10 @@ class MicrobitRobot {
                 LINE_STATES: {
                     acceptReporters: false,
                     items: _line_states,
+                },
+                ACC_GYRO_DIRS: {
+                    acceptReporters: false,
+                    items: ['x', 'y', 'z'],
                 },
             },
         };
@@ -388,21 +420,28 @@ class MicrobitRobot {
                     );
 
                     if (this._mServices.buttonService) {
-                        console.log("starting button service")
+                        console.log("starting button service");
                         this._mServices.buttonService.addEventListener(
                             "buttonastatechanged",
-                            this.updateSensors.bind(this)
+                            this.updateButtons.bind(this)
                         );
                         this._mServices.buttonService.addEventListener(
                             "buttonbstatechanged",
-                            this.updateSensors.bind(this)
+                            this.updateButtons.bind(this)
+                        );
+                    }
+                    if (this._mServices.accelerometerService) {
+                        console.log("starting accel service");
+                        this._mServices.accelerometerService.addEventListener(
+                            "accelerometerdatachanged",
+                            this.updateAccelerometer.bind(this)
                         );
                     }
                     if (this._mServices.uartService) {
-                        this._mServices.uartService.addEventListener(
-                            "receiveText",
-                            this.updateSensors.bind(this)
-                        );
+                        // this._mServices.uartService.addEventListener(
+                        //     "receiveText",
+                        //     this.updateSensors.bind(this)
+                        // );
                         this._mDevice.addEventListener(
                             "gattserverdisconnected",
                             this.onDeviceDisconnected.bind(this)
@@ -553,38 +592,52 @@ class MicrobitRobot {
     /**
      *
      */
-    updateSensors(event) {
-        console.log("Got UART data: " + event.detail);
-        console.log(event);
+    updateButtons(event) {
+        // console.log(event);
         if (event.type == "buttonbstatechanged") {
             this.b_button = event.detail;
         }
         else if (event.type == "buttonastatechanged") {
             this.a_button = event.detail;
         }
-        // let readings = event.detail.split(",");
-        // if (readings.length == 5) {
-        //     this.dist_read = parseInt(readings[0].substring(4));
-        //     this.a_button = parseInt(readings[1]);
-        //     this.b_button = parseInt(readings[2]);
-        //     this.left_line = parseInt(readings[3]);
-        //     this.right_line = parseInt(readings[4]);
-        // }
-        // if (isNaN(this.dist_read)) this.dist_read = 0;
-        // if (isNaN(this.a_button)) this.a_button = 0;
-        // if (isNaN(this.b_button)) this.b_button = 0;
-        // if (isNaN(this.left_line)) this.left_line = 0;
-        // if (isNaN(this.right_line)) this.right_line = 0;
+    }
+
+    updateAccelerometer(event) {
+        // console.log(event);
+        this.accelerometer = event.detail;
+
+        //the roll is made of x and z
+        // sin(roll) = accelerometer.x
+        // cos(roll- 180) = accelerometer.z
+
+        //the pitch is made of y and z
     }
 
     /**
      * Implement readDistance
      * @returns {string} the distance, in cm, of the nearest object. -1 means error
      */
+    readAccelx() {
+        console.log(this.accelerometer);
+        if (this.accelerometer != null){
+            return this.accelerometer.x;
+        }
+        else {
+            return null;
+        }
+    }
+
+    async readAccelerometer(args) {
+        if (this.accelerometer != null) {
+            return this.accelerometer[args.DIR];
+        }
+        return null;
+    }
+
     readDistance() {
         let current_time = Date.now();
         if (current_time - this.last_reading_time > 250) {
-            console.log("Updating read distance sensors");
+            // console.log("Updating read distance sensors");
             // send command to trigger distance read
             if (this._mServices) this._mServices.uartService.sendText("W#");
             this.last_reading_time = current_time;
@@ -613,7 +666,7 @@ class MicrobitRobot {
         // console.log(this._mServices.buttonService.readButtonAState());
         // console.log(this._mServices.buttonService.readButtonBState());
         var state = args.BUTTON;
-        console.log(args);
+        // console.log(args);
         if (state == "A") {
             return this.a_button == 1;
         } else if (state == "B") {
