@@ -101,8 +101,8 @@ export default [
     {
          name: (
             <FormattedMessage
-                defaultMessage="PRG Microbit Robot"
-                description="Name for the 'Microbit Robot' Extension"
+                defaultMessage="Microbit tiilt"
+                description="Name for the tiilt 'Microbit' Extension"
                 id="gui.extension.microbit-robot.name"
             />
         ),
