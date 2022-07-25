@@ -1,3 +1,6 @@
+// corresponding makecode project to load on microbit
+// https://makecode.microbit.org/_9eiXLqAUC4tR
+
 require("regenerator-runtime/runtime");
 const Runtime = require("../../engine/runtime");
 
@@ -59,6 +62,11 @@ const _line_states = ["right side", "left side", "neither side", "both sides"];
 
 const EXTENSION_ID = "microbitRobot";
 
+// model 1
+//  remember that vapag as player 1, and peget as player 2
+//  p1 = vapag; p2 = peget
+//  
+
 // Core, Team, and Official extension classes should be registered statically with the Extension Manager.
 // See: scratch-vm/src/extension-support/extension-manager.js
 class MicrobitRobot {
@@ -76,18 +84,23 @@ class MicrobitRobot {
 
         this._mStatus = 1;
         this._mDevice = null;
+        this.connectedDeviceHistory = ["000"];
+        // this._mDevices = [];
+        
         this._mServices = null;
+        // this._mServices = [];
 
         this.deviceInfo = {
             a_button: 0,
             b_button: 0,
             accelerometer: null,
+        };
 
-        }
         // this.dist_read = 0;
         this.a_button = 0;
         this.b_button = 0;
-        this.accelerometer = null;
+        this.accelerometer = {};
+        this.buttons = {};
         // this.left_line = 0;
         // this.right_line = 0;
         // this.last_reading_time = 0;
@@ -101,6 +114,10 @@ class MicrobitRobot {
         console.log("Version: adding clear led display");
     }
 
+    getConnectedDevices () {
+        return this.connectedDeviceHistory;
+    }
+
     /**
      * @return {object} This extension's metadata.
      */
@@ -109,9 +126,9 @@ class MicrobitRobot {
             id: EXTENSION_ID,
             name: formatMessage({
                 id: "microbitRobot",
-                default: "PRG Microbit Robot Blocks",
+                default: "tiilt Microbit Blocks",
                 description:
-                    "Extension using BLE to communicate with Microbit robot. Use hex file in https://sites.google.com/view/httyr-setup",
+                    "Extension using BLE to communicate with Microbits. Use hex file in https://makecode.microbit.org/_9eiXLqAUC4tR",
             }),
             showStatusButton: true,
             blockIconURI: blockIconURI,
@@ -123,21 +140,6 @@ class MicrobitRobot {
                     blockType: BlockType.BUTTON,
                     text: "Connect Robot",
                 },
-                /*{
-                    opcode: 'sendCommand',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.sendCommand',
-                        default: 'send comand [COMMAND]',
-                        description: 'Send a particular command to the robot'
-                    }),
-                    arguments: {
-                        COMMAND: {
-                            type:ArgumentType.STRING,
-                            defaultValue: "A#"
-                        }
-                    }
-                },*/
                 "---",
                 {
                     opcode: "writeLedString",
@@ -180,42 +182,6 @@ class MicrobitRobot {
                 },
                 "---",
                 {
-                    opcode: "playMusic",
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: "arduinoBot.playMusic",
-                        default: "play song [SONG]",
-                        description: "Play song using the piezo",
-                    }),
-                    arguments: {
-                        SONG: {
-                            type: ArgumentType.STRING,
-                            menu: "SONGS",
-                            defaultValue: _songs[0],
-                        },
-                    },
-                },
-                {
-                    opcode: "playNote",
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: "microbitBot.playNote",
-                        default: "play note [NOTE] for [NUM] seconds",
-                        description: "Play note using the piezo",
-                    }),
-                    arguments: {
-                        NUM: {
-                            type: ArgumentType.NUMBER,
-                            defaultValue: 1,
-                        },
-                        NOTE: {
-                            type: ArgumentType.NOTE,
-                            defaultValue: 60,
-                        },
-                    },
-                },
-                "---",
-                {
                     opcode: "whenButtonPressed",
                     text: formatMessage({
                         id: "arduinoBot.readButtonStatus",
@@ -247,11 +213,16 @@ class MicrobitRobot {
                     blockType: BlockType.REPORTER,
                     text: formatMessage({
                         id: "doodlebot.readAccelerometer",
-                        default: "accelerometer [DIR]",
+                        default: "accelerometer [DEVICE] [DIR]",
                         description:
                             "Get accelerometer reading from microbot",
                     }),
                     arguments: {
+                        DEVICE: {
+                            type: ArgumentType.String,
+                            menu: "ACC_DEVICES",
+                            defaultValue: this.getConnectedDevices()[0],
+                        },
                         DIR: {
                             type: ArgumentType.String,
                             menu: "ACC_GYRO_DIRS",
@@ -285,8 +256,14 @@ class MicrobitRobot {
                     acceptReporters: false,
                     items: _line_states,
                 },
+                ACC_DEVICES: "getConnectedDevices",
+                // {getConnectedDevices},
+                // {
+                //     acceptReporters: false,
+                //     items: [''],
+                // },
                 ACC_GYRO_DIRS: {
-                    acceptReporters: false,
+                    acceptReporters: true,
                     items: ['x', 'y', 'z'],
                 },
             },
@@ -312,6 +289,8 @@ class MicrobitRobot {
         this._mStatus = 1;
     }
 
+    
+
     async connectToBLE() {
         console.log("Getting BLE device");
 
@@ -321,8 +300,17 @@ class MicrobitRobot {
                     window.navigator.bluetooth
                 );
                 this._mServices = await microbit.getServices(this._mDevice);
-                console.log(this._mServices);
-
+                // console.log(this._mServices);
+                deviceName = this._mDevice.name.substr(this._mDevice.name.length - 6, 5);
+                console.log("dn " + deviceName);
+                if (this.connectedDeviceHistory.length == 1 && this.connectedDeviceHistory[0] == "000") {
+                    this.connectedDeviceHistory = [deviceName];
+                }
+                else if (this.connectedDeviceHistory.indexOf(deviceName) == -1) {
+                    console.log("dn " + deviceName);
+                    this.connectedDeviceHistory.push(deviceName);    
+                }
+                
                 if (this._mServices.deviceInformationService) {
                     this._mStatus = 2;
                     this.scratch_vm.emit(
@@ -330,19 +318,20 @@ class MicrobitRobot {
                     );
 
                     if (this._mServices.buttonService) {
-                        console.log(this._mDevice.name.substr(this._mDevice.name.length - 6, 5));
-                        var deviceName = this._mDevice.name;
+                        // console.log(this._mDevice.name.substr(this._mDevice.name.length - 6, 5));
+                        // var deviceName = this._mDevice.name;
                         // console.log(await this._mServices.deviceInformationService.getDeviceInformation());
                         console.log("starting button service");
+                        this.connectedDeviceHistory
 
-                        this._mServices.buttonService.addEventListener(
-                            "buttonastatechanged",
-                            this.updateButtons.bind(this)
-                        );
-                        this._mServices.buttonService.addEventListener(
-                            "buttonbstatechanged",
-                            this.updateButtons.bind(this)
-                        );
+                        // this._mServices.buttonService.addEventListener(
+                        //     "buttonastatechanged",
+                        //     this.updateButtons.bind(this)
+                        // );
+                        // this._mServices.buttonService.addEventListener(
+                        //     "buttonbstatechanged",
+                        //     this.updateButtons.bind(this)
+                        // );
                     }
                     if (this._mServices.accelerometerService) {
                         console.log("starting accel service");
@@ -352,10 +341,13 @@ class MicrobitRobot {
                         );
                     }
                     if (this._mServices.uartService) {
-                        // this._mServices.uartService.addEventListener(
-                        //     "receiveText",
-                        //     this.updateSensors.bind(this)
-                        // );
+                        console.log("uart service found");
+                        this._mServices.uartService.sendText("W#");
+                        this._mServices.uartService.addEventListener(
+                            "receiveText",
+                            // this.updateSensors.bind(this)
+                            this.receiveText.bind(this)
+                        );
                         this._mDevice.addEventListener(
                             "gattserverdisconnected",
                             this.onDeviceDisconnected.bind(this)
@@ -506,27 +498,40 @@ class MicrobitRobot {
     /**
      *
      */
-    updateButtons(event) {
-        // console.log(event);
-        console.log(this._mDevice.name.substr(this._mDevice.name.length - 6, 5));
 
-        if (event.type == "buttonbstatechanged") {
-            this.b_button = event.detail;
+     receiveText(event) {
+        // this._mServices.uartService.sendText("W#");
+        // console.log("trying to receive event detail");
+        // console.info(event.detail);
+        if (event.detail[0] == "a") {
+            devName = event.detail.substr(1, 5);
+            accDeets = event.detail.split(",");
+            accDeets.shift();
+            this.accelerometer[devName] = {"x": accDeets[0], "y": accDeets[1], "z": accDeets[2]};
         }
-        else if (event.type == "buttonastatechanged") {
-            this.a_button = event.detail;
-        }
-    }
+        
+
+     }
+    // updateButtons(event) {
+    //     // console.log(event);
+    //     console.log(this._mDevice.name.substr(this._mDevice.name.length - 6, 5));
+
+    //     if (event.type == "buttonbstatechanged") {
+    //         this.b_button = event.detail;
+    //     }
+    //     else if (event.type == "buttonastatechanged") {
+    //         this.a_button = event.detail;
+    //     }
+    // }
 
     updateAccelerometer(event, deviceName) {
         // console.log(event);
         // var devName = this._mDevice.name.substr(this._mDevice.name.length - 6, 5);
-        this.accelerometer = event.detail;
-        console.log(JSON.stringify(event.detail) + deviceName);
+        // this.accelerometer = event.detail;
+        // console.log(JSON.stringify(event.detail) + deviceName);
         //the roll is made of x and z
         // sin(roll) = accelerometer.x
         // cos(roll- 180) = accelerometer.z
-
         //the pitch is made of y and z
     }
 
@@ -545,10 +550,16 @@ class MicrobitRobot {
     }
 
     async readAccelerometer(args) {
-        if (this.accelerometer != null) {
-            return this.accelerometer[args.DIR];
+        // console.log(args)
+        // console.log(this.accelerometer[args.DEVICE]);
+        // console.log();
+        // console.log(args.DIR);
+        if (args.DEVICE in this.accelerometer) {
+            return this.accelerometer[args.DEVICE][args.DIR];
         }
-        return null;
+        else {
+            return null;
+        }
     }
 
     /*

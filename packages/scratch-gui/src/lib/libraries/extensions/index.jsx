@@ -111,8 +111,8 @@ export default [
         insetIconURL: microbitInsetIconURL,
         description: (
             <FormattedMessage
-                defaultMessage="Use Scratch to program a Microbit smart car robot"
-                description="PRG Microbit Robot description"
+                defaultMessage="Use Microbits to control your Scratch games and creations!"
+                description="tiilt microbit scratch extension"
                 id="gui.extension.microbit-robot.description"
             />
         ),
