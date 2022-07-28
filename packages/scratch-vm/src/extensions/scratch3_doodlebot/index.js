@@ -22,7 +22,7 @@ const _drive = ["forward", "backward", "left", "right"];
 const _turns = ["left", "right"];
 
 const _pen_dirs = ["up", "down"];
-const _pen_protocol = ["20", "45"];
+const _pen_protocol = ["35", "10"];
 
 const _bumpers = ["front", "back", "front or back", "front bumper and back", "neither"];
 
@@ -89,7 +89,7 @@ const _sensors = {
     "accelerometer": "x",
     "magnetometer": "o",
     "gyroscope": "g",
-    "color sensor": "l",
+    //"color sensor": "l",
     "temperature": "t",
     "humidity": "h",
     "pressure": "p",
@@ -197,7 +197,7 @@ class DoodlebotBlocks {
                     }),
                     arguments: {},
                 },
-                "---",
+                /*"---",
                 {
                     opcode: "setPixels",
                     blockType: BlockType.COMMAND,
@@ -278,7 +278,7 @@ class DoodlebotBlocks {
                         description: "Turn off the LED",
                     }),
                     arguments: {},
-                },
+                },*/
                 "---",
                 {
                     opcode: "drive",
@@ -414,9 +414,9 @@ class DoodlebotBlocks {
                     opcode: "whenBumperPressed",
                     text: formatMessage({
                         id: "doodlebot.bumperStatusEvent",
-                        default: "when [BUMPER] bumper pressed",
+                        default: "when [BUMPER] bumper [STATE]",
                         description:
-                            "Trigger when bumpers on doodlebot are pressed",
+                            "Edge trigger event for doodlebot bumpers",
                     }),
                     blockType: BlockType.HAT,
                     arguments: {
@@ -424,14 +424,19 @@ class DoodlebotBlocks {
                             type: ArgumentType.String,
                             menu: "BUMPERS",
                             defaultValue: _bumpers[0],
-                        },
+                        }, 
+                        STATE: {
+                            type: ArgumentType.String,
+                            menu: "PRESSED_STATE",
+                            defaultValue: "pressed",
+                        }
                     },
                 },
                 {
                     opcode: "ifBumperPressed",
                     text: formatMessage({
                         id: "doodlebot.readBumperStatus",
-                        default: "[BUMPER] bumper pressed",
+                        default: "[BUMPER] bumper pressed?",
                         description:
                             "Conditional indicating when bumpers on doodlebot are pressed",
                     }),
@@ -480,6 +485,16 @@ class DoodlebotBlocks {
                         default: "pressure",
                         description:
                             "Get pressure reading from robot",
+                    }),
+                },
+                {
+                    opcode: "readDistance",
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: "doodlebot.readDistance",
+                        default: "distance",
+                        description:
+                            "Get distance reading from robot",
                     }),
                 },
                 {
@@ -535,6 +550,16 @@ class DoodlebotBlocks {
                 },
                 "---",
                 {
+                    opcode: "ifRobotConnected",
+                    blockType: BlockType.BOOLEAN,
+                    text: formatMessage({
+                        id: "doodlebot.isConnected",
+                        default: "robot connected?",
+                        description:
+                            "Boolean to chec if robot is connected to Scratch",
+                    }),
+                },
+                {
                     opcode: "sendCommand",
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
@@ -582,6 +607,10 @@ class DoodlebotBlocks {
                 PIXEL_ANIMS: {
                     acceptReporters: false,
                     items: _pixel_anims,
+                },
+                PRESSED_STATE: {
+                    acceptReporters: false,
+                    items: ["pressed", "released"],
                 },
                 SENSORS: {
                     acceptReports: false,
@@ -668,7 +697,7 @@ class DoodlebotBlocks {
         console.log("Getting BLE device");
 
         // for development
-        let deviceName = "Bluefruit52"; // "BBC micro:bit";
+        let deviceNamePrefix = "Bluefruit52"; // "Saira" "BBC micro:bit";
 
         // RANDI try bluetooth audio devices
         const robotName = "Q65"; // "DoodlebotBT"
@@ -681,7 +710,7 @@ class DoodlebotBlocks {
             try {
                 this._robotDevice = await Doodlebot.requestRobot(
                     window.navigator.bluetooth,
-                    deviceName
+                    deviceNamePrefix
                 );
                 const services = await Doodlebot.getServices(this._robotDevice);
 
@@ -712,6 +741,8 @@ class DoodlebotBlocks {
         this.stopMotors();
         // turn off lights
         this.pixelsOff();
+        // stop blinking
+        this.stopBlink();
     }
 
     /**
@@ -802,6 +833,23 @@ class DoodlebotBlocks {
         return -1; // should never get here
     }
 
+    
+    /**
+     * For reading distance data back
+     */
+     async readDistance() {
+        if (this._robotUart) {
+            // enable the distance sensor if it is not already enabled
+            if (!this.sensorValues.hasOwnProperty('distance')) {
+                // wait for sensor to turn on
+                await this.enableSensor({SENSOR: "distance"});   
+            }
+            
+            return this.sensorValues['distance'];
+        }
+        return -1; // should never get here
+    }
+
     /**
      * For reading pressure data back
      */
@@ -876,8 +924,8 @@ class DoodlebotBlocks {
                 await this.enableSensor({SENSOR: "bumpers"});   
             }
             
-            const front = this.sensorValues["bumper.front"] == 1;
-            const back = this.sensorValues["bumper.back"] == 1;
+            const front = this.sensorValues["bumper.front"] == 0;
+            const back = this.sensorValues["bumper.back"] == 0;
 
             if (bumperSel == "front") {
                 return front;
@@ -924,7 +972,10 @@ class DoodlebotBlocks {
     async sendCommandToRobot(command, delayInMs) {
         return new Promise(resolve => {
             setTimeout(() => {
-                if (this._robotUart) this._robotUart.sendText(command);
+                if (this._robotUart) {
+                    console.log("Sending command:", command);
+                    this._robotUart.sendText(command);
+                }
                 else console.log("Robot not available");
                 resolve();
             }, delayInMs);
@@ -1010,10 +1061,10 @@ class DoodlebotBlocks {
      */
     updateSensors(event) {
         const dataLine = event.detail.split("(");
+        console.log("Received message: ", dataLine); // for debugging
 
         for (let i=0; i<dataLine.length; i++) {
             let data = dataLine[i];
-            //console.log("Sensor reading: ", data); // for sensor debugging
             if (data) {
                 if (data == "ms)") {
                     console.log("Stop the motor");
@@ -1121,10 +1172,10 @@ class DoodlebotBlocks {
         if (args.ANIM == "happy") {
             const happy_pause = 250;
             // Bounce the pen twice to indicate joy
-            await this.sendCommandToRobot("(u,0)", happy_pause);
-            await this.sendCommandToRobot("(u,45)", happy_pause);
-            await this.sendCommandToRobot("(u,0)", happy_pause);
-            await this.sendCommandToRobot("(u,45)", happy_pause);
+            await this.sendCommandToRobot("(u,35)", happy_pause);
+            await this.sendCommandToRobot("(u,10)", happy_pause);
+            await this.sendCommandToRobot("(u,35)", happy_pause);
+            await this.sendCommandToRobot("(u,10)", happy_pause);
         }
 
         // start blinking
@@ -1411,11 +1462,21 @@ class DoodlebotBlocks {
     }
 
     /**
+     * 
+     * Just for testing out, checks if robot is connected or not 
+     */
+    async ifRobotConnected(args) {
+        return this._robotStatus == 2;
+    }
+    /**
      * Just for testing out sending commands to robot via ble
      */
     async sendCommand(args) {
         let command = args.COMMAND;
         console.log("Sending uart command: ", command);
+
+        // stop blinking
+        this.stopBlink();
 
         await this.sendCommandToRobot(
             command, command_pause
