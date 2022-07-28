@@ -180,7 +180,7 @@ class MicrobitRobot {
                         description: "Clear LED display",
                     }),
                 },
-                "---",
+                /*"---",
                 {
                     opcode: "whenButtonPressed",
                     text: formatMessage({
@@ -207,7 +207,7 @@ class MicrobitRobot {
                         description:
                             "Get distance read from ultrasonic distance sensor",
                     }),
-                },
+                },*/
                 {
                     opcode: "readAccelerometer",
                     blockType: BlockType.REPORTER,
@@ -264,7 +264,7 @@ class MicrobitRobot {
                 // },
                 ACC_GYRO_DIRS: {
                     acceptReporters: true,
-                    items: ['x', 'y', 'z'],
+                    items: ['x', 'y', 'z', 'roll', 'pitch'],
                 },
             },
         };
@@ -507,7 +507,22 @@ class MicrobitRobot {
             devName = event.detail.substr(1, 5);
             accDeets = event.detail.split(",");
             accDeets.shift();
-            this.accelerometer[devName] = {"x": accDeets[0], "y": accDeets[1], "z": accDeets[2]};
+            if (!(devName in this.accelerometer)) {
+                this.accelerometer[devName] = {};
+            }
+            this.accelerometer[devName]["x"] = accDeets[0];
+            this.accelerometer[devName]["y"] = accDeets[1];
+            this.accelerometer[devName]["z"] = accDeets[2];
+        }
+        if (event.detail[0] == "c") {
+            devName = event.detail.substr(1, 5);
+            if (!(devName in this.accelerometer)) {
+                this.accelerometer[devName] = {};
+            }
+            accDeets = event.detail.split(",");
+            accDeets.shift();
+            this.accelerometer[devName]["roll"] = accDeets[0];
+            this.accelerometer[devName]["pitch"] = accDeets[1];
         }
         
 
