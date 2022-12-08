@@ -8,6 +8,8 @@ const formatMessage = require('format-message');
 const Video = require('../../io/video');
 
 const posenet = require('@tensorflow-models/posenet');
+const tfTask = require('@tensorflow-models/tasks');
+// const model = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
 
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
@@ -221,6 +223,7 @@ class Scratch3PoseNetBlocks {
             const time = +new Date();
             if (frame) {
                 this.poseState = await this.estimatePoseOnImage(frame);
+                this.objectState = await this.spotObjects(frame);
                 if (this.hasPose()) {
                     this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
                 } else {
@@ -240,11 +243,26 @@ class Scratch3PoseNetBlocks {
         });
     }
 
+    async spotObjects(imageElement) {
+        // load the posenet model from a checkpoint
+        const taskModel = await this.ensureTaskModelLoaded();
+        const result = await taskModel.predict(imageElement);
+       // console.log(result.objects);
+        return result.objects;
+    }
+
     async ensureBodyModelLoaded() {
         if (!this._bodyModel) {
             this._bodyModel = await posenet.load();
         }
         return this._bodyModel;
+    }
+
+    async ensureTaskModelLoaded() {
+        if (!this.taskModel) {
+            this.taskModel = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
+        }
+        return this.taskModel;
     }
 
     /**
@@ -388,6 +406,7 @@ class Scratch3PoseNetBlocks {
             this.projectStarted();
             this.firstInstall = false;
             this._bodyModel = null;
+            this._taskModel = null;
         }
 
         // Return extension definition
@@ -412,6 +431,19 @@ class Scratch3PoseNetBlocks {
                             type: ArgumentType.STRING,
                             defaultValue: 'rightShoulder',
                             menu: 'PART'
+                        },
+                    },
+                },
+                {
+                    opcode: 'goToObjects',
+                    text: 'go to [OBJECTS]',
+                    blockType: BlockType.COMMAND,
+                    isTerminal: false,
+                    arguments: {
+                        OBJECTS: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'basketball',
+                            menu: 'OBJECT'
                         },
                     },
                 },
@@ -469,6 +501,16 @@ class Scratch3PoseNetBlocks {
                         {text: 'left ankle', value: 'rightAnkle'},
                     ]
                 },
+                OBJECT: {
+                    acceptReporters: true,
+                    items: [
+                        {text: 'basketball', value: 'basketball'},
+                        {text: 'sports ball', value: 'sports ball'},
+                        {text: 'person', value: 'person'},
+                        {text: 'water bottle', value: 'water bottle'}
+                    ]
+                },
+
                 ATTRIBUTE: {
                     acceptReporters: true,
                     items: this._buildMenu(this.ATTRIBUTE_INFO)
@@ -489,7 +531,30 @@ class Scratch3PoseNetBlocks {
         if (this.hasPose()) {
             const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
             util.target.setXY(x, y, false);
+
         }
+    }
+
+    goToObjects(args, util) {
+       // if (this.hasPose()) {
+            const objectList = this.objectState;
+            console.log(objectList);
+            // const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
+            for (let i = 0; i< objectList.length; i++){
+                let indexObject = objectList[i];
+                if (indexObject.className === args['OBJECTS']){
+                    if(indexObject.score > 0.5){
+                        const x1 = indexObject.boundingBox.originX + (indexObject.boundingBox.width/2);
+                        const y1 = indexObject.boundingBox.originY + (indexObject.boundingBox.height/2);
+                        const {x,y} = this.tfCoordsToScratch({x:x1, y:y1});
+                        util.target.setXY(x, y, false);
+                        break;
+                        // return {objectList[i].boundingBox.originX + (width/2), objectList[i].boundingBox.originY + (height/2)};
+                    }
+                }
+                
+            }
+       // }
     }
 
     hasPose() {

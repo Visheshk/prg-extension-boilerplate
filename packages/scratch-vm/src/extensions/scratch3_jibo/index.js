@@ -378,7 +378,7 @@ class Scratch3Jibo {
     disconnect() {}
     scan() {}
     isConnected() {
-        console.log("isConnected status: " + this.connected);
+        // console.log("isConnected status: " + this.connected);
         return this.connected;
     }
 
