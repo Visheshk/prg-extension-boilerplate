@@ -261,6 +261,10 @@ class Scratch3PoseNetBlocks {
     async ensureTaskModelLoaded() {
         if (!this.taskModel) {
             this.taskModel = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
+            const model = await tfTask.ObjectDetection.CustomModel.TFLite.load({
+                model: 'http://localhost:8000/weights/best-fp16.tflite',
+            });
+
         }
         return this.taskModel;
     }
