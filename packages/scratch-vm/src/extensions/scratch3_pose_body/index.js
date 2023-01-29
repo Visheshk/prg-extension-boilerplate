@@ -222,8 +222,10 @@ class Scratch3PoseNetBlocks {
 
             const time = +new Date();
             if (frame) {
-                this.poseState = await this.estimatePoseOnImage(frame);
+                console.log("starting obj det");
+                // this.poseState = await this.estimatePoseOnImage(frame);
                 this.objectState = await this.spotObjects(frame);
+                console.log(this.objectState);
                 if (this.hasPose()) {
                     this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
                 } else {
@@ -247,7 +249,7 @@ class Scratch3PoseNetBlocks {
         // load the posenet model from a checkpoint
         const taskModel = await this.ensureTaskModelLoaded();
         const result = await taskModel.predict(imageElement);
-       // console.log(result.objects);
+        console.log(result.objects);
         return result.objects;
     }
 
@@ -260,9 +262,9 @@ class Scratch3PoseNetBlocks {
 
     async ensureTaskModelLoaded() {
         if (!this.taskModel) {
-            this.taskModel = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
-            const model = await tfTask.ObjectDetection.CustomModel.TFLite.load({
-                model: 'http://localhost:8000/weights/best-fp16.tflite',
+            // this.taskModel = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
+            this.taskModel = await tfTask.ObjectDetection.CustomModel.TFLite.load({
+                model: 'static/model-mm.tflite',
             });
 
         }
@@ -544,19 +546,21 @@ class Scratch3PoseNetBlocks {
             const objectList = this.objectState;
             console.log(objectList);
             // const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
-            for (let i = 0; i< objectList.length; i++){
-                let indexObject = objectList[i];
-                if (indexObject.className === args['OBJECTS']){
-                    if(indexObject.score > 0.5){
-                        const x1 = indexObject.boundingBox.originX + (indexObject.boundingBox.width/2);
-                        const y1 = indexObject.boundingBox.originY + (indexObject.boundingBox.height/2);
-                        const {x,y} = this.tfCoordsToScratch({x:x1, y:y1});
-                        util.target.setXY(x, y, false);
-                        break;
-                        // return {objectList[i].boundingBox.originX + (width/2), objectList[i].boundingBox.originY + (height/2)};
+            if (objectList){
+                for (let i = 0; i< objectList.length; i++){
+                    let indexObject = objectList[i];
+                    if (indexObject.className === args['OBJECTS']){
+                        if(indexObject.score > 0.5){
+                            const x1 = indexObject.boundingBox.originX + (indexObject.boundingBox.width/2);
+                            const y1 = indexObject.boundingBox.originY + (indexObject.boundingBox.height/2);
+                            const {x,y} = this.tfCoordsToScratch({x:x1, y:y1});
+                            util.target.setXY(x, y, false);
+                            break;
+                            // return {objectList[i].boundingBox.originX + (width/2), objectList[i].boundingBox.originY + (height/2)};
+                        }
                     }
+                    
                 }
-                
             }
        // }
     }
