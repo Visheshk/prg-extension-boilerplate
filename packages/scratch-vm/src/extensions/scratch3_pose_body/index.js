@@ -264,7 +264,7 @@ class Scratch3PoseNetBlocks {
         if (!this.taskModel) {
             // this.taskModel = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
             this.taskModel = await tfTask.ObjectDetection.CustomModel.TFLite.load({
-                model: 'static/model-mm.tflite',
+                model: 'static/salad-model.tflite',
             });
 
         }
