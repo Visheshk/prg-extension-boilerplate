@@ -10,7 +10,9 @@ const Video = require('../../io/video');
 // const posenet = require('@tensorflow-models/posenet');
 // const tfTask = require('@tensorflow-models/tasks');
 
-const graph = require('@tensorflow/tfjs')
+const graph = require('@tensorflow/tfjs');
+const converter = require('@tensorflow/tfjs-converter');
+
 // const model = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
 
 function friendlyRound(amount) {
@@ -225,6 +227,7 @@ class Scratch3PoseNetBlocks {
             const time = +new Date();
             if (frame) {
                 // console.log("starting obj det");
+                
                 const frameArray = Array.from(frame['data']);
                 const r = [];
                 const g = [];
@@ -268,9 +271,10 @@ class Scratch3PoseNetBlocks {
                 arrFinal.push(arr);
                 arrTensor = graph.tensor(arrFinal);
                 arrTensorInt = graph.cast(arrTensor, 'int32');
+                
                 // this.poseState = await this.estimatePoseOnImage(frame);
-                this.objectState = await this.spotObjects(arrTensorInt);
-                //this.objectState = await this.spotObjects(arrTensor);
+                this.objectState = await this.spotObjects(frame);
+                // this.objectState = await this.spotObjects(arrTensor);
                 if (this.objectState) {
                     console.log(this.objectState);
                 }
@@ -299,9 +303,17 @@ class Scratch3PoseNetBlocks {
         //const result = await taskModel.predict(imageElement);
         // console.log(result.objects);
         // return result.objects;
-        const result = await taskModel.executeAsync(imageElement);
-        // console.log(result.objects);
-        return result.objects;
+        var itt = graph.image.resizeNearestNeighbor(graph.browser.fromPixels(imageElement), [64, 64]);
+        var imageTensor = graph.cast(itt.reshape([1, 64, 64, 3]), 'float32');
+        //.reshape()
+        // console.log(itt);
+        // var imageTensor  = graph.tensor4d([[1], [itt]]);
+        // console.log(imageTensor);
+        const result = await taskModel.executeAsync(imageTensor);
+        console.log(result);
+        console.log(graph.print(result));
+        // var result = false;
+        return result;
     }
 
     async ensureBodyModelLoaded() {
@@ -313,11 +325,12 @@ class Scratch3PoseNetBlocks {
 
     async ensureTaskModelLoaded() {
         if (!this.taskModel) {
+            console.log("loading model");
             //this.taskModel = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
             // this.taskModel = await tfTask.ObjectDetection.CustomModel.TFLite.load({
             //    model: 'static/modelAditOldtf.tflite',
             // });
-            this.taskModel = await graph.loadGraphModel("https://raw.githubusercontent.com/Visheshk/visheshk.github.com/master/assets/best_web_model/model.json");
+            this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Visheshk/visheshk.github.com/master/assets/best_web_model/model.json");
         }
         return this.taskModel;
     }
