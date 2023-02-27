@@ -161,18 +161,18 @@ export default [
     {
          name: (
             <FormattedMessage
-                defaultMessage="PRG Microbit Robot"
-                description="Name for the 'Microbit Robot' Extension"
+                defaultMessage="Play Impossible Gameball"
+                description="Name for the 'Impossible Gameball' Extension"
                 id="gui.extension.microbit-robot.name"
             />
         ),
-        extensionId: 'microbitRobot',
+        extensionId: 'playimpossibleData',
         iconURL: microbitRobotIconURL,
         insetIconURL: microbitInsetIconURL,
         description: (
             <FormattedMessage
-                defaultMessage="Use Scratch to program a Microbit smart car robot"
-                description="PRG Microbit Robot description"
+                defaultMessage="Use Scratch to identify movement on the Play Impossible Gameball"
+                description="Impossible Gameball data extension"
                 id="gui.extension.microbit-robot.description"
             />
         ),
