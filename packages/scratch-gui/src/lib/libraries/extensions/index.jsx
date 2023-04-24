@@ -34,6 +34,10 @@ import translateInsetIconURL from './translate/translate-small.png';
 import makeymakeyIconURL from './makeymakey/makeymakey.png';
 import makeymakeyInsetIconURL from './makeymakey/makeymakey-small.svg';
 
+import gameballIconURL from './gameball/gb.png';
+import gameballInsetIconURL from './gameball/gb.svg';
+
+
 import microbitIconURL from './microbit/microbit.png';
 import microbitInsetIconURL from './microbit/microbit-small.svg';
 import microbitConnectionIconURL from './microbit/microbit-illustration.svg';
@@ -249,14 +253,14 @@ export default [
         internetConnectionRequired: true
     },
     {
-        name: 'Makey Makey',
+        name: 'Play Impossible Gameball',
         extensionId: 'makeymakey',
         collaborator: 'JoyLabz',
-        iconURL: makeymakeyIconURL,
-        insetIconURL: makeymakeyInsetIconURL,
+        iconURL: gameballIconURL,
+        insetIconURL: gameballInsetIconURL,
         description: (
             <FormattedMessage
-                defaultMessage="Make anything into a key."
+                defaultMessage="Connect to a PlayImpossible Gameball and make games!"
                 description="Description for the 'Makey Makey' extension"
                 id="gui.extension.makeymakey.description"
             />
