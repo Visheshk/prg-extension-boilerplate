@@ -57,7 +57,7 @@ const MAX_PIEZO_NOTE = 72;
 const _drive = ["forward", "backward"];
 const _turn = ["left", "right"];
 
-const _button = ["A", "B", "A+B"];
+const _button = ["A", "B", "A or B", "A and B", "neither A nor B"];
 const _line_states = ["right side", "left side", "neither side", "both sides"];
 
 const EXTENSION_ID = "microbitRobot";
@@ -174,21 +174,17 @@ class MicrobitRobot {
                         description: "Clear LED display",
                     }),
                 },
+                /*"---",
                 {
                     opcode: "whenButtonPressed",
                     text: formatMessage({
-                        id: "microbitBot.readButtonStatus",
-                        default: "when [DEVICE] [BUTTON] button pressed",
+                        id: "arduinoBot.readButtonStatus",
+                        default: "when [BUTTON] button pressed",
                         description:
                             "Trigger when buttons on microbit are pressed",
                     }),
                     blockType: BlockType.HAT,
                     arguments: {
-                        DEVICE: {
-                            type: ArgumentType.String,
-                            menu: "ACC_DEVICES",
-                            defaultValue: this.getConnectedDevices()[0],
-                        },
                         BUTTON: {
                             type: ArgumentType.String,
                             menu: "BUTTON_STATES",
@@ -197,10 +193,20 @@ class MicrobitRobot {
                     },
                 },
                 {
+                    opcode: "readAccelx",
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: "arduinoBot.readAccelx",
+                        default: "Accelerometer x",
+                        description:
+                            "Get distance read from ultrasonic distance sensor",
+                    }),
+                },*/
+                {
                     opcode: "readAccelerometer",
                     blockType: BlockType.REPORTER,
                     text: formatMessage({
-                        id: "microbitBot.readAccelerometer",
+                        id: "doodlebot.readAccelerometer",
                         default: "accelerometer [DEVICE] [DIR]",
                         description:
                             "Get accelerometer reading from microbot",
@@ -215,28 +221,6 @@ class MicrobitRobot {
                             type: ArgumentType.String,
                             menu: "ACC_GYRO_DIRS",
                             defaultValue: 'x',
-                        },
-                    },
-                },
-                {
-                    opcode: "readButtons",
-                    blockType: BlockType.REPORTER,
-                    text: formatMessage({
-                        id: "microbitBot.readButtons",
-                        default: "button [DEVICE] [BUTT]",
-                        description:
-                            "Get button reading from microbot",
-                    }),
-                    arguments: {
-                        DEVICE: {
-                            type: ArgumentType.String,
-                            menu: "ACC_DEVICES",
-                            defaultValue: this.getConnectedDevices()[0],
-                        },
-                        BUTT: {
-                            type: ArgumentType.String,
-                            menu: "ACC_BUTTONS",
-                            defaultValue: 'A',
                         },
                     },
                 },
@@ -275,10 +259,6 @@ class MicrobitRobot {
                 ACC_GYRO_DIRS: {
                     acceptReporters: true,
                     items: ['x', 'y', 'z', 'roll', 'pitch'],
-                },
-                ACC_BUTTONS: {
-                    acceptReporters: false,
-                    items: ["A", "B", "A+B"],
                 },
             },
         };
@@ -528,17 +508,6 @@ class MicrobitRobot {
             this.accelerometer[devName]["y"] = accDeets[1];
             this.accelerometer[devName]["z"] = accDeets[2];
         }
-        if (event.detail[0] == "b") {
-            devName = event.detail.substr(1, 5);
-            if (!(devName in this.buttons)) {
-                this.buttons[devName] = {"a": 0, "b": 0};
-            }
-            buttDeets = event.detail.split(",");
-            buttDeets.shift();
-            this.buttons[devName]["A"] = buttDeets[0];
-            this.buttons[devName]["B"] = buttDeets[1];
-            this.buttons[devName]["A+B"] = buttDeets[1];
-        }
         if (event.detail[0] == "c") {
             devName = event.detail.substr(1, 5);
             if (!(devName in this.accelerometer)) {
@@ -602,16 +571,6 @@ class MicrobitRobot {
         }
     }
 
-
-    async readButtons(args) {
-        if (args.DEVICE in this.buttons) {
-            return this.buttons[args.DEVICE][args.BUTT];
-        }
-        else {
-            return null;
-        }
-    }
-
     /*
     readDistance() {
         let current_time = Date.now();
@@ -637,14 +596,7 @@ class MicrobitRobot {
      */
     readButtonStatus(args) {
         var state = args.BUTTON;
-        console.log(args);
-        console.log(this.buttons);
-        if (args.DEVICE in this.buttons) {
-            return this.buttons[args.DEVICE][args.BUTTON] == 1;
-        }
-        else {
-            return false;
-        }
+        // console.log(args);
         if (state == "A") {
             return this.a_button == 1;
         } else if (state == "B") {
