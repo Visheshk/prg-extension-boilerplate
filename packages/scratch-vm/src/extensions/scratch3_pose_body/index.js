@@ -13,8 +13,6 @@ const Video = require('../../io/video');
 const graph = require('@tensorflow/tfjs');
 const converter = require('@tensorflow/tfjs-converter');
 
-// const model = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
-
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
 }
@@ -226,55 +224,7 @@ class Scratch3PoseNetBlocks {
 
             const time = +new Date();
             if (frame) {
-                // console.log("starting obj det");
-                
-                const frameArray = Array.from(frame['data']);
-                const r = [];
-                const g = [];
-                const b = [];
-                const a = [];
-                for (let i = 0; i < frameArray.length; i += 4) {
-                    r.push(frameArray[i]);
-                    g.push(frameArray[i+1]);
-                    b.push(frameArray[i+2]);
-                    a.push(frameArray[i+3]);
-                  }
-                const r2d = [];
-                const g2d = [];
-                const b2d = [];
-                const a2d = [];
-                for (let i = 0; i < r.length; i += 360) {
-                    r2d.push(r.slice(i, i+360));
-                    g2d.push(g.slice(i, i+360));
-                    b2d.push(b.slice(i, i+360));
-                    a2d.push(a.slice(i, i+360));
-                }
-                rgbArray = [];
-                rgbArray.push(r2d);
-                rgbArray.push(g2d);
-                rgbArray.push(b2d);
-                rgbTensorInput = [];
-                rgbTensorInput.push(rgbArray);
-                const arr = [];
-                for(let i = 0; i < 480; i++){
-                    const rowTime = [];
-                    for(let j = 0; j < 360; j++){
-                        const colTime = [];
-                        colTime.push(r2d[i][j]);
-                        colTime.push(g2d[i][j]);
-                        colTime.push(b2d[i][j]);
-                        rowTime.push(colTime);
-                    }
-                    arr.push(rowTime);
-                }
-                const arrFinal = [];
-                arrFinal.push(arr);
-                arrTensor = graph.tensor(arrFinal);
-                arrTensorInt = graph.cast(arrTensor, 'int32');
-                
-                // this.poseState = await this.estimatePoseOnImage(frame);
                 this.objectState = await this.spotObjects(frame);
-                // this.objectState = await this.spotObjects(arrTensor);
                 if (this.objectState) {
                     console.log(this.objectState);
                 }
@@ -300,19 +250,10 @@ class Scratch3PoseNetBlocks {
     async spotObjects(imageElement) {
         // load the posenet model from a checkpoint
         const taskModel = await this.ensureTaskModelLoaded();
-        //const result = await taskModel.predict(imageElement);
-        // console.log(result.objects);
-        // return result.objects;
-        var itt = graph.image.resizeNearestNeighbor(graph.browser.fromPixels(imageElement), [64, 64]);
-        var imageTensor = graph.cast(itt.reshape([1, 64, 64, 3]), 'float32');
-        //.reshape()
-        // console.log(itt);
-        // var imageTensor  = graph.tensor4d([[1], [itt]]);
-        // console.log(imageTensor);
+        var itt = graph.image.resizeNearestNeighbor(graph.browser.fromPixels(imageElement), [416, 416]);
+        var imageTensor = graph.cast(itt.reshape([1, 416, 416, 3]), 'float32');
         const result = await taskModel.executeAsync(imageTensor);
-        console.log(result);
-        console.log(graph.print(result));
-        // var result = false;
+        // const result = await taskModel.execute(imageTensor);
         return result;
     }
 
@@ -326,11 +267,9 @@ class Scratch3PoseNetBlocks {
     async ensureTaskModelLoaded() {
         if (!this.taskModel) {
             console.log("loading model");
-            //this.taskModel = await tfTask.ObjectDetection.CocoSsd.TFLite.load();
-            // this.taskModel = await tfTask.ObjectDetection.CustomModel.TFLite.load({
-            //    model: 'static/modelAditOldtf.tflite',
-            // });
-            this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Visheshk/visheshk.github.com/master/assets/best_web_model/model.json");
+            //this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Visheshk/visheshk.github.com/master/assets/best_web_model/model.json");
+            //this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model-v8n-320/model.json");
+            this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
         }
         return this.taskModel;
     }
@@ -608,11 +547,13 @@ class Scratch3PoseNetBlocks {
     goToObjects(args, util) {
        // if (this.hasPose()) {
             const objectList = this.objectState;
-            console.log(objectList);
             // const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
-            if (objectList){
+            //if (objectList){
+                // const tensorData = objectList.dataSync();
                 for (let i = 0; i< objectList.length; i++){
                     let indexObject = objectList[i];
+                    // const tensorData = indexObject.dataSync();
+                    // console.log("*****", tensorData);
                     if (indexObject.className === args['OBJECTS']){
                         if(indexObject.score > 0.5){
                             const x1 = indexObject.boundingBox.originX + (indexObject.boundingBox.width/2);
@@ -625,7 +566,7 @@ class Scratch3PoseNetBlocks {
                     }
                     
                 }
-            }
+            //}
        // }
     }
 
