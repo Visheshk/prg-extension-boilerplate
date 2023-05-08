@@ -268,7 +268,6 @@ class Scratch3PoseNetBlocks {
         if (!this.taskModel) {
             console.log("loading model");
             //this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Visheshk/visheshk.github.com/master/assets/best_web_model/model.json");
-            //this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model-v8n-320/model.json");
             this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
         }
         return this.taskModel;
@@ -547,6 +546,10 @@ class Scratch3PoseNetBlocks {
     goToObjects(args, util) {
        // if (this.hasPose()) {
             const objectList = this.objectState;
+            console.log("ind 0", objectList[0].dataSync());
+            console.log("ind 1", objectList[1].dataSync());
+            console.log("ind 2", objectList[2].dataSync());
+            console.log("ind 3", objectList[3].dataSync());
             // const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
             //if (objectList){
                 // const tensorData = objectList.dataSync();
