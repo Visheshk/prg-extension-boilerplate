@@ -7,11 +7,9 @@ const Cast = require('../../util/cast');
 const formatMessage = require('format-message');
 const Video = require('../../io/video');
 
-// const posenet = require('@tensorflow-models/posenet');
-// const tfTask = require('@tensorflow-models/tasks');
-
-const graph = require('@tensorflow/tfjs');
-const converter = require('@tensorflow/tfjs-converter');
+const tf = require('@tensorflow/tfjs');
+require("@tensorflow/tfjs-backend-webgl");
+tf.setBackend('webgl');
 
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
@@ -125,7 +123,7 @@ class Scratch3PoseNetBlocks {
     }
 
     static get MODELDIMENSIONS () {
-        return [412, 412];
+        return [640, 640];
     }
     /**
      * The key to load & store a target's motion-related state.
@@ -227,10 +225,11 @@ class Scratch3PoseNetBlocks {
 
             const time = +new Date();
             if (frame) {
+                // tf.engine().startScope();
                 this.objectState = await this.spotObjects(frame);
-                if (this.objectState) {
-                    console.log(this.objectState);
-                }
+                // if (this.objectState) {
+                //     console.log(this.objectState);
+                // }
                 if (this.hasPose()) {
                     this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
                 } else {
@@ -251,13 +250,23 @@ class Scratch3PoseNetBlocks {
     }
 
     async spotObjects(imageElement) {
-        // load the posenet model from a checkpoint
         const taskModel = await this.ensureTaskModelLoaded();
-        var itt = graph.image.resizeNearestNeighbor(graph.browser.fromPixels(imageElement), [416, 416]);
-        var imageTensor = graph.cast(itt.reshape([1, 416, 416, 3]), 'float32');
+        const itt = tf.image.resizeNearestNeighbor(tf.browser.fromPixels(imageElement), [416, 416]);
+        
+
+        // const im = new Image();
+        // im.src = "";
+        // im.onload = () => {
+        //     const a = tf.fromPixels(im, [416, 416]);
+        //     console.log(a.shape);
+        // }
+
+        // const imageTensor = tf.cast(itt.transpose([0,1,2]).expandDims(), 'float32');
+        const imageTensor = itt.div(255.0) // normalize
+        .expandDims(0); // add batch
         const result = await taskModel.executeAsync(imageTensor);
-        // const result = taskModel.execute(imageTensor);
-        // const result = await taskModel.predict(imageTensor);
+        // tf.dispose(itt);
+        // tf.dispose(imageTensor);
         return result;
     }
 
@@ -270,10 +279,9 @@ class Scratch3PoseNetBlocks {
 
     async ensureTaskModelLoaded() {
         if (!this.taskModel) {
-            console.log("loading model");
-            //this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Visheshk/visheshk.github.com/master/assets/best_web_model/model.json");
-            // this.taskModel = await converter.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
-            this.taskModel = await graph.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
+            this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
+            // this.taskModel = await tf.loadGraphModel("https://storage.googleapis.com/tfjs-examples/simple-object-detection/dist/object_detection_model/model.json");
+            // this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Hyuto/yolov5-tfjs/master/public/yolov5n_web_model/model.json");
         }
         return this.taskModel;
     }
@@ -544,83 +552,55 @@ class Scratch3PoseNetBlocks {
         if (this.hasPose()) {
             const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
             util.target.setXY(x, y, false);
-
         }
     }
 
-    goToObjects(args, util) {
-       // if (this.hasPose()) {
-            const objectList = this.objectState;
-            console.log("ind 0", objectList[0].arraySync());
-            var boundingBoxes = objectList[0].arraySync()[0];
-            console.log("ind 1", objectList[1].arraySync());
-            console.log("ind 2", objectList[2].arraySync());
-            console.log("ind 3", objectList[3].arraySync());
+    async goToObjects(args, util) {
+        const objectList = this.objectState;
+        var boundingBoxes = objectList[0].arraySync()[0];
+        // var boundingBoxes = await objectList[2].array();
+        // console.log("=============", boundingBoxes);
+        var confList = 
 
-            // var c = document.getElementById("canvas2D");
-            // var ctx = c.getContext("2d");
-            // ctx.beginPath();
-            // ctx.moveTo(0, 0);
-            // ctx.lineTo(300, 150);
-            // ctx.stroke();
-            var bbs = document.getElementsByClassName("boundingBoxes");
-            while (bbs.length > 0) {
-                bbs[0].remove();
-            }
+        console.log("ind 0", objectList[0].arraySync()[0]);
+        console.log("ind 1", objectList[1].arraySync()[0]);
+        console.log("ind 2", objectList[2].arraySync()[0]);
+        console.log("ind 3", objectList[3].arraySync()[0]);
 
-            for (let i=0; i<100; i++) {
-                var x1 = boundingBoxes[i][0];
-                var y1 = boundingBoxes[i][1];
-                var x2 = boundingBoxes[i][2];
-                var y2 = boundingBoxes[i][3];
-                if (y1 < 0 || y2 < 0) {
-                    console.log("hirwhgiuwoioiwoiw");
-                    console.log(boundingBoxes[i]);
-                }
-                const parentDiv = document.querySelector('.stage_stage_1fD7k');
-                parentDiv.style.position = 'relative';
-        
-                const childDiv = parentDiv.querySelector('div');
-                // Create a yellow colored div element
-                const yellowBox = document.createElement('div');
-                yellowBox.style.border = '1px solid black';
-                // yellowBox.style.width = ((x2-x1)*416).toString()+"px";
-                // yellowBox.style.height = ((y2-y1)*416).toString()+"px";
-                yellowBox.style.width = (x2 * Scratch3PoseNetBlocks.DIMENSIONS[0]).toString()+"px";
-                yellowBox.style.height = (y2 * Scratch3PoseNetBlocks.DIMENSIONS[1]).toString()+"px";
-                yellowBox.style.top = (y1 * Scratch3PoseNetBlocks.DIMENSIONS[1]).toString()+"px";
-                yellowBox.style.left = (x1 * Scratch3PoseNetBlocks.DIMENSIONS[0]).toString()+"px";
-                yellowBox.style.position = 'absolute';
-                yellowBox.classList.add("boundingBoxes");
-        
-                // Append the yellow box to the div element
-                childDiv.appendChild(yellowBox);
-            }
-      
+        var bbs = document.getElementsByClassName("boundingBoxes");
+        while (bbs.length > 0) {
+            bbs[0].remove();
+        }
 
+        for (let i=0; i<100; i++) {
+            // var x1 = boundingBoxes[i][0];
+            // var y1 = boundingBoxes[i][1];
+            // var x2 = boundingBoxes[i][2];
+            // var y2 = boundingBoxes[i][3];
+            // if
+            var x1 = boundingBoxes[i][0];
+            var y1 = boundingBoxes[i][1];
+            var x2 = boundingBoxes[i][2];
+            var y2 = boundingBoxes[i][3];
+            var w = x2 - x1;
+            var h = y2 - y1;
+            const parentDiv = document.querySelector('.stage_stage_1fD7k');
+            parentDiv.style.position = 'relative';
 
-            
-            // const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
-            //if (objectList){
-                // const tensorData = objectList.dataSync();
-                for (let i = 0; i< objectList.length; i++){
-                    let indexObject = objectList[i];
-                    // const tensorData = indexObject.dataSync();
-                    // console.log("*****", tensorData);
-                    if (indexObject.className === args['OBJECTS']){
-                        if(indexObject.score > 0.5){
-                            const x1 = indexObject.boundingBox.originX + (indexObject.boundingBox.width/2);
-                            const y1 = indexObject.boundingBox.originY + (indexObject.boundingBox.height/2);
-                            const {x,y} = this.tfCoordsToScratch({x:x1, y:y1});
-                            util.target.setXY(x, y, false);
-                            break;
-                            // return {objectList[i].boundingBox.originX + (width/2), objectList[i].boundingBox.originY + (height/2)};
-                        }
-                    }
-                    
-                }
-            //}
-       // }
+            const childDiv = parentDiv.querySelector('div');
+            const yellowBox = document.createElement('div');
+            yellowBox.style.border = '1px solid black';
+            yellowBox.style.width = (x2 * 480).toString()+"px";
+            yellowBox.style.height = (y2 * 360).toString()+"px";
+            yellowBox.style.bottom = (y1 * 360).toString()+"px";
+            yellowBox.style.left = (x1 * 480).toString()+"px";
+            yellowBox.style.position = 'absolute';
+            yellowBox.classList.add("boundingBoxes");
+
+            childDiv.appendChild(yellowBox);
+        }
+        // tf.dispose(objectList);
+        // tf.engine().endScope();
     }
 
     hasPose() {
