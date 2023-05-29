@@ -8,8 +8,8 @@ const formatMessage = require('format-message');
 const Video = require('../../io/video');
 
 const tf = require('@tensorflow/tfjs');
-require("@tensorflow/tfjs-backend-webgl");
-tf.setBackend('webgl');
+// require("@tensorflow/tfjs-backend-webgl");
+// tf.setBackend('webgl');
 
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
@@ -558,46 +558,43 @@ class Scratch3PoseNetBlocks {
     async goToObjects(args, util) {
         const objectList = this.objectState;
         var boundingBoxes = objectList[0].arraySync()[0];
-        // var boundingBoxes = await objectList[2].array();
-        // console.log("=============", boundingBoxes);
-        var confList = 
+        var confList = objectList[1].arraySync()[0];
+        var classesList = objectList[2].arraySync()[0];
+        var numberOfObjects = objectList[3].arraySync()[0]
 
-        console.log("ind 0", objectList[0].arraySync()[0]);
-        console.log("ind 1", objectList[1].arraySync()[0]);
-        console.log("ind 2", objectList[2].arraySync()[0]);
-        console.log("ind 3", objectList[3].arraySync()[0]);
+        console.log("ind 0", boundingBoxes);
+        console.log("ind 1", confList);
+        console.log("ind 2", classesList);
+        console.log("ind 3", numberOfObjects);
 
         var bbs = document.getElementsByClassName("boundingBoxes");
         while (bbs.length > 0) {
             bbs[0].remove();
         }
 
-        for (let i=0; i<100; i++) {
-            // var x1 = boundingBoxes[i][0];
-            // var y1 = boundingBoxes[i][1];
-            // var x2 = boundingBoxes[i][2];
-            // var y2 = boundingBoxes[i][3];
-            // if
-            var x1 = boundingBoxes[i][0];
-            var y1 = boundingBoxes[i][1];
-            var x2 = boundingBoxes[i][2];
-            var y2 = boundingBoxes[i][3];
-            var w = x2 - x1;
-            var h = y2 - y1;
-            const parentDiv = document.querySelector('.stage_stage_1fD7k');
-            parentDiv.style.position = 'relative';
+        for (let i=0; i<numberOfObjects; i++) {
+            if (confList[i] > 0.5) {
+                var x1 = (boundingBoxes[i][0]/416)*480;
+                var y1 = (boundingBoxes[i][1]/416)*360;
+                var x2 = (boundingBoxes[i][2]/416)*480;
+                var y2 = (boundingBoxes[i][3]/416)*360;
+                var w = x2 - x1;
+                var h = y2 - y1;
+                const parentDiv = document.querySelector('.stage_stage_1fD7k');
+                parentDiv.style.position = 'relative';
 
-            const childDiv = parentDiv.querySelector('div');
-            const yellowBox = document.createElement('div');
-            yellowBox.style.border = '1px solid black';
-            yellowBox.style.width = (x2 * 480).toString()+"px";
-            yellowBox.style.height = (y2 * 360).toString()+"px";
-            yellowBox.style.bottom = (y1 * 360).toString()+"px";
-            yellowBox.style.left = (x1 * 480).toString()+"px";
-            yellowBox.style.position = 'absolute';
-            yellowBox.classList.add("boundingBoxes");
+                const childDiv = parentDiv.querySelector('div');
+                const yellowBox = document.createElement('div');
+                yellowBox.style.border = '1px solid black';
+                yellowBox.style.width = (w * 405).toString()+"px";
+                yellowBox.style.height = (h * 305).toString()+"px";
+                yellowBox.style.bottom = (y1 * 305).toString()+"px"; // 305 max
+                yellowBox.style.left = (x1 * 405).toString()+"px"; // 405 max
+                yellowBox.style.position = 'absolute';
+                yellowBox.classList.add("boundingBoxes");
 
-            childDiv.appendChild(yellowBox);
+                childDiv.appendChild(yellowBox);
+            }
         }
         // tf.dispose(objectList);
         // tf.engine().endScope();
