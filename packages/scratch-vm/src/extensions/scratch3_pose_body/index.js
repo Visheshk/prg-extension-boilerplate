@@ -8,8 +8,8 @@ const formatMessage = require('format-message');
 const Video = require('../../io/video');
 
 const tf = require('@tensorflow/tfjs');
-// require("@tensorflow/tfjs-backend-webgl");
-// tf.setBackend('webgl');
+require("@tensorflow/tfjs-backend-webgl");
+tf.setBackend('webgl');
 
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
@@ -225,8 +225,12 @@ class Scratch3PoseNetBlocks {
 
             const time = +new Date();
             if (frame) {
-                // tf.engine().startScope();
-                this.objectState = await this.spotObjects(frame);
+                
+                // await this.spotObjects(frame);
+                this.currImage = frame;
+                // var boundingBoxes = await objectList[2].array();
+                // console.log("=============", boundingBoxes);
+                
                 // if (this.objectState) {
                 //     console.log(this.objectState);
                 // }
@@ -249,25 +253,28 @@ class Scratch3PoseNetBlocks {
         });
     }
 
+    async preprocess (source, modelWidth, modelHeight){
+      let xRatio, yRatio; // ratios for boxes
+
+      const input = tf.tidy(() => {
+        const img = tf.browser.fromPixels(source);
+        return tf.image
+            .resizeNearestNeighbor(img, [416, 416])
+            .div(255.0)
+            .expandDims(0);
+      });
+
+      return input;
+    };
+
+
     async spotObjects(imageElement) {
-        const taskModel = await this.ensureTaskModelLoaded();
-        const itt = tf.image.resizeNearestNeighbor(tf.browser.fromPixels(imageElement), [416, 416]);
         
-
-        // const im = new Image();
-        // im.src = "";
-        // im.onload = () => {
-        //     const a = tf.fromPixels(im, [416, 416]);
-        //     console.log(a.shape);
-        // }
-
-        // const imageTensor = tf.cast(itt.transpose([0,1,2]).expandDims(), 'float32');
-        const imageTensor = itt.div(255.0) // normalize
-        .expandDims(0); // add batch
-        const result = await taskModel.executeAsync(imageTensor);
-        // tf.dispose(itt);
+        
+        // tf.dispose();
         // tf.dispose(imageTensor);
-        return result;
+        // return result;
+        // tf.engine().endScope();
     }
 
     async ensureBodyModelLoaded() {
@@ -555,49 +562,67 @@ class Scratch3PoseNetBlocks {
         }
     }
 
-    async goToObjects(args, util) {
-        const objectList = this.objectState;
-        var boundingBoxes = objectList[0].arraySync()[0];
-        var confList = objectList[1].arraySync()[0];
-        var classesList = objectList[2].arraySync()[0];
-        var numberOfObjects = objectList[3].arraySync()[0]
 
-        console.log("ind 0", boundingBoxes);
-        console.log("ind 1", confList);
-        console.log("ind 2", classesList);
-        console.log("ind 3", numberOfObjects);
+    drawBoxes(boundingBoxes, confids, classes) {
+        console.log("boxes", boundingBoxes);
+        console.log("confids", confids);
+        console.log("classes", classes);
+        console.log(tf.memory());
+        // console.log("confidences", objectState[1]);
+        // console.log("classes", objectState[2]);
+        // console.log("ind 3", objectState[3]);
+        // var boundingBoxes = this.objectState[0][0];
 
         var bbs = document.getElementsByClassName("boundingBoxes");
         while (bbs.length > 0) {
             bbs[0].remove();
         }
 
-        for (let i=0; i<numberOfObjects; i++) {
-            if (confList[i] > 0.5) {
-                var x1 = (boundingBoxes[i][0]/416)*480;
-                var y1 = (boundingBoxes[i][1]/416)*360;
-                var x2 = (boundingBoxes[i][2]/416)*480;
-                var y2 = (boundingBoxes[i][3]/416)*360;
+        for (let i=0; i<100; i++) {
+            // if (confids[i] > 0.5) {
+                var x1 = boundingBoxes[4*i];
+                var y1 = boundingBoxes[4*i + 1];
+                var x2 = boundingBoxes[4*i + 2];
+                var y2 = boundingBoxes[4*i + 3];
                 var w = x2 - x1;
                 var h = y2 - y1;
                 const parentDiv = document.querySelector('.stage_stage_1fD7k');
                 parentDiv.style.position = 'relative';
-
+                console.log(x1, x2, y2, y1);
                 const childDiv = parentDiv.querySelector('div');
                 const yellowBox = document.createElement('div');
                 yellowBox.style.border = '1px solid black';
-                yellowBox.style.width = (w * 405).toString()+"px";
-                yellowBox.style.height = (h * 305).toString()+"px";
-                yellowBox.style.bottom = (y1 * 305).toString()+"px"; // 305 max
-                yellowBox.style.left = (x1 * 405).toString()+"px"; // 405 max
+                yellowBox.style.width = (x2 * 480).toString()+"px";
+                yellowBox.style.height = (y2 * 360).toString()+"px";
+                yellowBox.style.bottom = (y1 * 360).toString()+"px";
+                yellowBox.style.left = (x1 * 480).toString()+"px";
                 yellowBox.style.position = 'absolute';
                 yellowBox.classList.add("boundingBoxes");
 
                 childDiv.appendChild(yellowBox);
-            }
+            // }
         }
+    }
+
+    async goToObjects(args, util) {        
+        const taskModel = await this.ensureTaskModelLoaded();
+        tf.engine().startScope();
+        const imageTensor = await this.preprocess(this.currImage);
+        await taskModel.executeAsync(imageTensor).then((res) => {
+            const [boxes, scores, classes] = res.slice(0, 3);
+            const boxes_data = boxes.dataSync();
+            const scores_data = scores.dataSync();
+            const classes_data = classes.dataSync();
+            // console.log(boxes_data);
+            // const result = [boxes_data, scores_data, classes_data];
+            // this.objectState = result;
+            this.drawBoxes(boxes_data, scores_data, classes_data);
+            tf.dispose(res);
+        });
+        
         // tf.dispose(objectList);
-        // tf.engine().endScope();
+        tf.engine().endScope();
+
     }
 
     hasPose() {
