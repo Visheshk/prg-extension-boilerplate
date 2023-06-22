@@ -22,9 +22,10 @@ import defineDynamicBlock from '../lib/define-dynamic-block';
 import {connect} from 'react-redux';
 import {updateToolbox} from '../reducers/toolbox';
 import {activateColorPicker} from '../reducers/color-picker';
-import {closeExtensionLibrary, openSoundRecorder, openConnectionModal, openTextModelModal,openClassifierModelModal} from '../reducers/modals';
+import {closeExtensionLibrary, openSoundRecorder, openConnectionModal, openTextModelModal,openClassifierModelModal, openProgrammaticModal} from '../reducers/modals';
 import {activateCustomProcedures, deactivateCustomProcedures} from '../reducers/custom-procedures';
 import {setConnectionModalExtensionId} from '../reducers/connection-modal';
+import {openUIEvent, registerButtonCallbackEvent} from "../../../../extensions/dist/globals";
 
 import {
     activateTab,
@@ -107,23 +108,28 @@ class Blocks extends React.Component {
         const procButtonCallback = () => {
             this.ScratchBlocks.Procedures.createProcedureDefCallback_(this.workspace);
         };
+        const textModelEditButtonCallback = () => {
+            this.props.onOpenTextModelModal();
+        };
+        const classifierModelEditButtonCallback = () => {
+            this.props.onOpenClassifierModelModal();
+        }
         const connectMicrobitRobotCallback = () => {
             this.props.vm.runtime.emit('CONNECT_MICROBIT_ROBOT');
-        }
-        const connectDoodlebotCallback = () => {
-            this.props.vm.runtime.emit('CONNECT_DOODLEBOT');
-        }
-        const testDoodlebotCallback = () => {
-            this.props.vm.runtime.emit('TEST_DOODLEBOT');
         }
 
         toolboxWorkspace.registerButtonCallback('MAKE_A_VARIABLE', varListButtonCallback(''));
         toolboxWorkspace.registerButtonCallback('MAKE_A_LIST', varListButtonCallback('list'));
         toolboxWorkspace.registerButtonCallback('MAKE_A_PROCEDURE', procButtonCallback);
+        toolboxWorkspace.registerButtonCallback('EDIT_TEXT_MODEL', textModelEditButtonCallback);
+        toolboxWorkspace.registerButtonCallback('EDIT_TEXT_CLASSIFIER', classifierModelEditButtonCallback);
         toolboxWorkspace.registerButtonCallback('CONNECT_MICROBIT_ROBOT', connectMicrobitRobotCallback);
-        toolboxWorkspace.registerButtonCallback('CONNECT_DOODLEBOT', connectDoodlebotCallback);
-        toolboxWorkspace.registerButtonCallback('TEST_DOODLEBOT', testDoodlebotCallback);
+        
+        this.props.vm.runtime.on(registerButtonCallbackEvent, (event) => {
+            toolboxWorkspace.registerButtonCallback(event, () => this.props.vm.runtime.emit(event));
+        });
 
+        this.props.vm.runtime.on(openUIEvent, (details) => this.props.onOpenProgrammaticModal(details));
 
         // Store the xml of the toolbox that is actually rendered.
         // This is used in componentDidUpdate instead of prevProps, because
@@ -479,12 +485,7 @@ class Blocks extends React.Component {
         this.setState(p);
     }
     handleConnectionModalStart (extensionId) {
-        let prgCustomExtensions = [
-            // 'doodlebot',
-            'microbitRobot',
-            "gameballExt"
-            // 'teachableMachine'
-            ];
+        let prgCustomExtensions = ['microbitRobot','teachableMachine'];
         if (!prgCustomExtensions.includes(extensionId)) {
             this.props.onOpenConnectionModal(extensionId);
         }
@@ -698,6 +699,9 @@ const mapDispatchToProps = dispatch => ({
     onOpenSoundRecorder: () => {
         dispatch(activateTab(SOUNDS_TAB_INDEX));
         dispatch(openSoundRecorder());
+    },
+    onOpenProgrammaticModal: (details) => {
+        dispatch(openProgrammaticModal(details))
     },
     onRequestCloseExtensionLibrary: () => {
         dispatch(closeExtensionLibrary());
