@@ -100,11 +100,34 @@ class GameballExt {
         this.left_line = 0;
         this.right_line = 0;
         this.last_reading_time = 0;
+        this.lastConnectCheck = 0;
+        this.chargeCharacteristic = null;
         
         this.scratch_vm.on('PROJECT_STOP_ALL', this.resetRobot.bind(this));
         this.scratch_vm.on('CONNECT_MICROBIT_ROBOT', this.connectToBLE.bind(this));
         
         console.log("Version: adding clear led display");
+        this._loop();
+    }
+
+    async _loop() {
+        // while (true) {
+        //     var timeNow = new Date().getTime();
+        //     if ((timeNow - 10000) > this.lastConnectCheck && this.chargeCharacteristic != null) {
+        //         console.log("connect loop happening");
+        //         cc = await this.capCharacteristic.readValue();
+        //         if (cc == undefined) {
+        //             this.chargeCharacteristic = null;
+        //         }
+        //         else {
+        //             ccVal = new Uint16Array(cc.buffer)[0] *(3/(2^12))
+        //             console.log(ccVal);
+        //             this.lastConnectCheck = timeNow;    
+        //         }
+                
+        //     }
+        // }
+
     }
 
     resetRobot() {
@@ -415,16 +438,43 @@ class GameballExt {
         this._mServices = null;
         this._mStatus = 1;
     }
+    /*
+    async connectLoop(capChar) {
+        while (true) {
+            var timeNow = new Date().getTime();
+            if ((timeNow - 10000) > this.lastConnectCheck) {
+                console.log("connect loop happening");
+                cc = await capChar.readValue();
+                ccVal = new Uint16Array(cc.buffer)[0] *(3/(2^12))
+                console.log(ccVal);
+            }
+        } 
 
+    }
+    */
     async chargeRead(capCharacteristic) {
-        // console.log(capCharacteristic);
+
+        // while (true) {
+            // console.log("in this loop");
+            // var timeNow = new Date().getTime();
+            // if ((timeNow - 10000) > this.lastConnectCheck && cc != undefined) {
+            //     console.log("connect loop happening");
+            //     cc = await capCharacteristic.readValue();
+            //     ccVal = new Uint16Array(cc.buffer)[0] *(3/(2^12))
+            //     console.log(ccVal);
+            //     this.lastConnectCheck = timeNow;
+            // }
+        // } 
+
+        console.log(capCharacteristic);
         cc = await capCharacteristic.readValue();
         ccVal = new Uint16Array(cc.buffer)[0] *(3/(2^12))
         console.log(ccVal);
 
         if (cc != undefined) {
             // console.log("calling againt");
-            setTimeout(this.chargeRead, 10000, capCharacteristic);
+            // this.connectLoop(capCharacteristic);
+            // setTimeout(this.chargeRead, 10000, capCharacteristic);
         }
     }
 
@@ -512,7 +562,9 @@ class GameballExt {
         streamChar = await sService.getCharacteristic("a54d785d-d675-4cda-b794-ca049d4e044b");
         capService = await server.getPrimaryService(gameballUuid["capacitorService"][0]);
         capCharacteristic = await capService.getCharacteristic(gameballUuid["capV"][0]);
-        setTimeout(this.chargeRead, 10000, capCharacteristic);
+        for (var x=1; x < 180; x++) {
+            setTimeout(this.chargeRead, x*10000, capCharacteristic);    
+        }
 
         await streamChar.writeValue(Uint8Array.of(3));
         streamRead = await sService.getCharacteristic("a54d785d-d676-4cda-b794-ca049d4e044b");

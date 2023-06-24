@@ -679,13 +679,13 @@ class MenuBar extends React.Component {
                         </div>
                     </div>
                     <Divider className={classNames(styles.divider)} />
-                    <a
+                    {/*<a
                         className={classNames(styles.menuBarItem, styles.hoverable)}
                         href="https://docs.google.com/document/d/1PK8o1yeQFq9HmMCYgEszAEdbk-bDXulFx0UVVWZyZ-M/edit"
                         target="_blank"
                     >
                         Doodlebot Cheat Sheet
-                    </a>
+                    </a>*/}
                     {this.props.showTutorials ? (
                         <div>
                             <Divider className={classNames(styles.divider)} />
