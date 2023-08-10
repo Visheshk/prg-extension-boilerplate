@@ -258,7 +258,7 @@ class MicrobitRobot {
                 // },
                 ACC_GYRO_DIRS: {
                     acceptReporters: true,
-                    items: ['x', 'y', 'z', 'roll', 'pitch'],
+                    items: ['x', 'y', 'z', 'strength', 'roll', 'pitch'],
                 },
             },
         };
@@ -507,6 +507,7 @@ class MicrobitRobot {
             this.accelerometer[devName]["x"] = accDeets[0];
             this.accelerometer[devName]["y"] = accDeets[1];
             this.accelerometer[devName]["z"] = accDeets[2];
+            this.accelerometer[devName]["strength"] = parseInt((accDeets[0]**2 + accDeets[1]**2 + accDeets[2]**2)**0.5);
         }
         if (event.detail[0] == "c") {
             devName = event.detail.substr(1, 5);
