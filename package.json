@@ -21,7 +21,8 @@
     "test:extensions": "npm run test --prefix ./extensions/",
     "document:extensions": "npm run document --prefix ./extensions/",
     "edocument": "npm run document:extensions",
-    "etest": "npm run test:extensions"
+    "etest": "npm run test:extensions",
+    "cleanModules": "cd scratch-gui && rm -rf node-modules/ && cd .. && cd scratch-vm && rm -rf node-modules/ && cd .. && cd scratch-blocks && rm -rf node-modules/ && cd .. && cd scratch-render && rm -rf node-modules/ && cd .."
   },
   "devDependencies": {
     "@types/webgl2": "^0.0.6",
