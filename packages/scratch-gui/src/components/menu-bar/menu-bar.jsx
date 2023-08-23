@@ -71,7 +71,7 @@ import profileIcon from './icon--profile.png';
 import remixIcon from './icon--remix.svg';
 import dropdownCaret from './dropdown-caret.svg';
 import languageIcon from '../language-selector/language-icon.svg';
-import scratchLogo from './prg-white.png';
+import scratchLogo from './tiilt-white.png';
 import sharedMessages from '../../lib/shared-messages';
 import loadScript from 'load-script';
 const GOOGLE_SDK_URL = 'https://apis.google.com/js/api.js';
@@ -138,9 +138,9 @@ const MenuItemTooltip = ({id, isRtl, children, className}) => (
     </ComingSoonTooltip>
 );
 
-const APP_ID = '906634949042'; // first part of client ID
-const CLIENT_ID = '906634949042-5jbc7q594e69spg2i0bkt9a14iojvtsp.apps.googleusercontent.com';
-const DEVELOPER_KEY = 'AIzaSyDRoOjwaDXOxq4cda1nrCVLaVQvTCh5GYE';
+const APP_ID = '1018220554528'; // first part of client ID
+const CLIENT_ID = '1018220554528-p98stvb91kdg17tef1ar0kcarhmuc8ns.apps.googleusercontent.com';
+const DEVELOPER_KEY = 'AIzaSyCufzRsIOJCXR62IBrn445Pvlps5GVNcY0';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 
