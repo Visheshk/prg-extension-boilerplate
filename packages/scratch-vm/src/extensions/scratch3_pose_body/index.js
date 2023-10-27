@@ -6,8 +6,10 @@ const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
 const formatMessage = require('format-message');
 const Video = require('../../io/video');
-
 const posenet = require('@tensorflow-models/posenet');
+const tf = require('@tensorflow/tfjs');
+// require("@tensorflow/tfjs-backend-webgl");
+tf.setBackend('webgl');
 
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
@@ -120,6 +122,9 @@ class Scratch3PoseNetBlocks {
         return [480, 360];
     }
 
+    static get MODELDIMENSIONS () {
+        return [640, 640];
+    }
     /**
      * The key to load & store a target's motion-related state.
      * @type {string}
@@ -221,6 +226,14 @@ class Scratch3PoseNetBlocks {
             const time = +new Date();
             if (frame) {
                 this.poseState = await this.estimatePoseOnImage(frame);
+                // await this.spotObjects(frame);
+                this.currImage = frame;
+                // var boundingBoxes = await objectList[2].array();
+                // console.log("=============", boundingBoxes);
+                
+                // if (this.objectState) {
+                //     console.log(this.objectState);
+                // }
                 if (this.hasPose()) {
                     this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
                 } else {
@@ -240,11 +253,43 @@ class Scratch3PoseNetBlocks {
         });
     }
 
+    async preprocess (source, modelWidth, modelHeight){
+      let xRatio, yRatio; // ratios for boxes
+
+      const input = tf.tidy(() => {
+        const img = tf.browser.fromPixels(source);
+        return tf.image
+            .resizeNearestNeighbor(img, [416, 416])
+            .div(255.0)
+            .expandDims(0);
+      });
+
+      return input;
+    };
+
+
+    async spotObjects(imageElement) {
+        
+        
+        // tf.dispose();
+        // tf.dispose(imageTensor);
+        // return result;
+        // tf.engine().endScope();
+    }
+
     async ensureBodyModelLoaded() {
         if (!this._bodyModel) {
             this._bodyModel = await posenet.load();
         }
         return this._bodyModel;
+    }
+
+    async ensureTaskModelLoaded() {
+        if (!this.taskModel) {
+            //this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
+            this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom_new/model.json");
+        }
+        return this.taskModel;
     }
 
     /**
@@ -388,6 +433,7 @@ class Scratch3PoseNetBlocks {
             this.projectStarted();
             this.firstInstall = false;
             this._bodyModel = null;
+            this._taskModel = null;
         }
 
         // Return extension definition
@@ -412,6 +458,19 @@ class Scratch3PoseNetBlocks {
                             type: ArgumentType.STRING,
                             defaultValue: 'rightShoulder',
                             menu: 'PART'
+                        },
+                    },
+                },
+                {
+                    opcode: 'goToObjects',
+                    text: 'go to [OBJECTS]',
+                    blockType: BlockType.COMMAND,
+                    isTerminal: false,
+                    arguments: {
+                        OBJECTS: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'basketball',
+                            menu: 'OBJECT'
                         },
                     },
                 },
@@ -469,6 +528,16 @@ class Scratch3PoseNetBlocks {
                         {text: 'left ankle', value: 'rightAnkle'},
                     ]
                 },
+                OBJECT: {
+                    acceptReporters: true,
+                    items: [
+                        {text: 'basketball', value: 'basketball'},
+                        {text: 'sports ball', value: 'sports ball'},
+                        {text: 'person', value: 'person'},
+                        {text: 'water bottle', value: 'water bottle'}
+                    ]
+                },
+
                 ATTRIBUTE: {
                     acceptReporters: true,
                     items: this._buildMenu(this.ATTRIBUTE_INFO)
@@ -490,6 +559,63 @@ class Scratch3PoseNetBlocks {
             const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
             util.target.setXY(x, y, false);
         }
+    }
+
+
+    drawBoxes(boundingBoxes, confids, classes) {
+        console.log("boxes", boundingBoxes);
+        console.log("confids", confids);
+        console.log("classes", classes);
+        console.log(tf.memory());
+
+        var bbs = document.getElementsByClassName("boundingBoxes");
+        while (bbs.length > 0) {
+            bbs[0].remove();
+        }
+
+        for (let i=0; i<100; i++) {
+            if (confids[i] > 0.5) {
+                var x1 = (boundingBoxes[4*i]/416)*480;
+                var y1 = (boundingBoxes[4*i+1]/416)*360;
+                var x2 = (boundingBoxes[4*i+2]/416)*480;
+                var y2 = (boundingBoxes[4*i+3]/416)*360;
+                var w = x2 - x1;
+                var h = y2 - y1;
+                const parentDiv = document.querySelector('.stage_stage_1fD7k');
+                parentDiv.style.position = 'relative';
+
+                const childDiv = parentDiv.querySelector('div');
+                const yellowBox = document.createElement('div');
+                yellowBox.style.border = '1px solid black';
+                yellowBox.style.width = (w * 405).toString()+"px";
+                yellowBox.style.height = (h * 305).toString()+"px";
+                yellowBox.style.bottom = (y1 * 305).toString()+"px";
+                yellowBox.style.left = (x1 * 405).toString()+"px";
+                yellowBox.style.position = 'absolute';
+                yellowBox.classList.add("boundingBoxes");
+
+                childDiv.appendChild(yellowBox);
+            }
+        }
+    }
+
+    async goToObjects(args, util) {        
+        const taskModel = await this.ensureTaskModelLoaded();
+        tf.engine().startScope();
+        const imageTensor = await this.preprocess(this.currImage);
+        await taskModel.executeAsync(imageTensor).then((res) => {
+            const [boxes, scores, classes] = res.slice(0, 3);
+            const boxes_data = boxes.dataSync();
+            const scores_data = scores.dataSync();
+            const classes_data = classes.dataSync();
+            // console.log(boxes_data);
+            this.drawBoxes(boxes_data, scores_data, classes_data);
+            tf.dispose(res);
+        });
+        
+        // tf.dispose(objectList);
+        tf.engine().endScope();
+
     }
 
     hasPose() {
