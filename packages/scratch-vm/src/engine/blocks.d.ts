@@ -102,10 +102,10 @@ declare class Blocks {
      */
     getScripts(): Array<string>;
     /**
-      * Get the next block for a particular block
-      * @param {?string} id ID of block to get the next block for
-      * @return {?string} ID of next block in the sequence
-      */
+     * Get the next block for a particular block
+     * @param {?string} id ID of block to get the next block for
+     * @return {?string} ID of next block in the sequence
+     */
     getNextBlock(id: string | null): string | null;
     /**
      * Get the branch for a particular C-shaped block.

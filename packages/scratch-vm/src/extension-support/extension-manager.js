@@ -19,12 +19,15 @@ const builtinExtensions = {
     // but serves as a reference for loading core blocks as extensions.
     coreExample: () => require("../blocks/scratch3_core_example"),
     pen: () => require("../extensions/scratch3_pen"),
+    // videoSensing: () => require("../extensions/scratch3_video_sensing"),
+    poseFace: () => require('../extensions/scratch3_pose_face'),
+    poseHand: () => require('../extensions/scratch3_pose_hand'),
+    poseBody: () => require('../extensions/scratch3_pose_body'),
+    microbitRobot: () => require("../extensions/scratch3_microbot"),
+    gameballExt: () => require("../extensions/scratch3_gameball"),
     music: () => require("../extensions/scratch3_music"),
     text2speech: () => require("../extensions/scratch3_text2speech"),
-    speech2text: () => require("../extensions/scratch3_speech2text"),
-    videoSensing: () => require("../extensions/scratch3_video_sensing"),
-    microbitRobot: () => require("../extensions/scratch3_microbot"),
-    gameballExt: () => require("../extensions/scratch3_gameball")
+    speech2text: () => require("../extensions/scratch3_speech2text")
 }
 
 /**

@@ -31,7 +31,7 @@ declare class Sprite {
     costumes_: Array<any>;
     /**
      * List of sounds for this sprite.
-    */
+     */
     sounds: any[];
     /**
      * List of clones for this sprite, including the original.

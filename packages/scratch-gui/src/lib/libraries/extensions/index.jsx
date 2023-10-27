@@ -174,6 +174,48 @@ export default [
         ),
         featured: true
     },
+        {
+        name: "Hand Sensing",
+        extensionId: 'poseHand',
+        iconURL: poseHandBlocksIconURL,
+        insetIconURL: poseHandInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="Sense hand movement with the camera."
+                description="PoseNet Description"
+                id="gui.extension.pose_hand.description"
+            />
+        ),
+        featured: true
+    },
+    {
+        name: "Face Sensing",
+        extensionId: 'poseFace',
+        iconURL: poseFaceBlocksIconURL,
+        insetIconURL: poseFaceInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="Sense face movement with the camera."
+                description="PoseNet Description"
+                id="gui.extension.pose_face.description"
+            />
+        ),
+        featured: true
+    },
+    {
+        name: "Body Sensing",
+        extensionId: 'poseBody',
+        iconURL: poseBodyBlocksIconURL,
+        insetIconURL: poseBodyInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="Sense body position with the camera."
+                description="PoseNet Description"
+                id="gui.extension.pose_body.description"
+            />
+        ),
+        featured: true
+    },
     {
         name: (
             <FormattedMessage

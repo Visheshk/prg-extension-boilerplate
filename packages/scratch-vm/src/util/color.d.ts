@@ -127,10 +127,10 @@ declare class Color {
         b: number;
     }): number;
     /**
-    * Convert a hex color (e.g., F00, #03F, #0033FF) to a decimal color number.
-    * @param {!string} hex Hex representation of the color.
-    * @return {!number} Number representing the color.
-    */
+     * Convert a hex color (e.g., F00, #03F, #0033FF) to a decimal color number.
+     * @param {!string} hex Hex representation of the color.
+     * @return {!number} Number representing the color.
+     */
     static hexToDecimal(hex: string): number;
     /**
      * Convert an HSV color to RGB format.
