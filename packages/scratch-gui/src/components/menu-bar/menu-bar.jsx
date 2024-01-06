@@ -688,7 +688,7 @@ class MenuBar extends React.Component {
                     </a>*/}
                     {this.props.showTutorials ? (
                         <div>
-                            <Divider className={classNames(styles.divider)} />
+                            
                             <div
                                 aria-label={this.props.intl.formatMessage(ariaMessages.tutorials)}
                                 className={classNames(styles.menuBarItem, styles.hoverable)}
