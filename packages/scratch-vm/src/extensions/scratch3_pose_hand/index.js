@@ -7,7 +7,7 @@ const Cast = require('../../util/cast');
 const formatMessage = require('format-message');
 const Video = require('../../io/video');
 
-const handpose = require('@tensorflow-models/handpose');
+const handpose = require('@tensorflow-models/hand-pose-detection');
 
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);

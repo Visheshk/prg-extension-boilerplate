@@ -6,7 +6,9 @@ const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
 const formatMessage = require('format-message');
 const Video = require('../../io/video');
-const posenet = require('@tensorflow-models/posenet');
+// const posenet = require('@tensorflow-models/posenet');
+const poseDetection = require('@tensorflow-models/pose-detection');
+
 const tf = require('@tensorflow/tfjs');
 // require("@tensorflow/tfjs-backend-webgl");
 tf.setBackend('webgl');
@@ -225,7 +227,8 @@ class Scratch3PoseNetBlocks {
 
             const time = +new Date();
             if (frame) {
-                this.poseState = await this.estimatePoseOnImage(frame);
+                this.poseStates = await this.estimatePoseOnImage(frame);
+                this.poseState = this.poseStates[0];
                 // await this.spotObjects(frame);
                 this.currImage = frame;
                 // var boundingBoxes = await objectList[2].array();
@@ -248,9 +251,10 @@ class Scratch3PoseNetBlocks {
     async estimatePoseOnImage(imageElement) {
         // load the posenet model from a checkpoint
         const bodyModel = await this.ensureBodyModelLoaded();
-        return await bodyModel.estimateSinglePose(imageElement, {
-            flipHorizontal: false
-        });
+        // return await bodyModel.estimateSinglePose(imageElement, {
+        //     flipHorizontal: false
+        // });
+        return await bodyModel.estimatePoses(imageElement);
     }
 
     async preprocess (source, modelWidth, modelHeight){
@@ -279,7 +283,11 @@ class Scratch3PoseNetBlocks {
 
     async ensureBodyModelLoaded() {
         if (!this._bodyModel) {
-            this._bodyModel = await posenet.load();
+            const moveModel = poseDetection.SupportedModels.MoveNet;
+            this._bodyModel = await poseDetection.createDetector(moveModel);
+
+            // const moveModel = poseDetection.SupportedModels.MoveNet;
+            // this._bodyModel = await posenet.load();
         }
         return this._bodyModel;
     }
@@ -456,11 +464,25 @@ class Scratch3PoseNetBlocks {
                     arguments: {
                         PART: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'rightShoulder',
+                            defaultValue: 'right shoulder',
                             menu: 'PART'
                         },
                     },
                 },
+                /* TODO::: set up confidence threshold setter!!!
+                {
+                    opcode: 'goToObjects',
+                    text: 'go to [OBJECTS]',
+                    blockType: BlockType.COMMAND,
+                    isTerminal: false,
+                    arguments: {
+                        OBJECTS: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'basketball',
+                            menu: 'OBJECT'
+                        },
+                    },
+                },*/
                 {
                     opcode: 'goToObjects',
                     text: 'go to [OBJECTS]',
@@ -510,22 +532,22 @@ class Scratch3PoseNetBlocks {
                     acceptReporters: true,
                     items: [
                         {text: 'nose', value: 'nose'},
-                        {text: 'right eye', value: 'leftEye'},
-                        {text: 'left eye', value: 'rightEye'},
-                        {text: 'right ear', value: 'leftEar'},
-                        {text: 'left ear', value: 'rightEar'},
-                        {text: 'right shoulder', value: 'leftShoulder'},
-                        {text: 'left shoulder', value: 'rightShoulder'},
-                        {text: 'right elbow', value: 'leftElbow'},
-                        {text: 'left elbow', value: 'rightElbow'},
-                        {text: 'right wrist', value: 'leftWrist'},
-                        {text: 'left wrist', value: 'rightWrist'},
-                        {text: 'right hip', value: 'leftHip'},
-                        {text: 'left hip', value: 'rightHip'},
-                        {text: 'right knee', value: 'leftKnee'},
-                        {text: 'left knee', value: 'rightKnee'},
-                        {text: 'right ankle', value: 'leftAnkle'},
-                        {text: 'left ankle', value: 'rightAnkle'},
+                        {text: 'right eye', value: 'left_eye'},
+                        {text: 'left eye', value: 'right_eye'},
+                        {text: 'right ear', value: 'left_ear'},
+                        {text: 'left ear', value: 'right_ear'},
+                        {text: 'right shoulder', value: 'left_shoulder'},
+                        {text: 'left shoulder', value: 'right_shoulder'},
+                        {text: 'right elbow', value: 'left_elbow'},
+                        {text: 'left elbow', value: 'right_elbow'},
+                        {text: 'right wrist', value: 'left_wrist'},
+                        {text: 'left wrist', value: 'right_wrist'},
+                        {text: 'right hip', value: 'left_hip'},
+                        {text: 'left hip', value: 'right_hip'},
+                        {text: 'right knee', value: 'left_knee'},
+                        {text: 'left knee', value: 'right_knee'},
+                        {text: 'right ankle', value: 'left_ankle'},
+                        {text: 'left ankle', value: 'right_ankle'},
                     ]
                 },
                 OBJECT: {
@@ -556,8 +578,18 @@ class Scratch3PoseNetBlocks {
 
     goToPart(args, util) {
         if (this.hasPose()) {
-            const {x, y} = this.tfCoordsToScratch(this.poseState.keypoints.find(point => point.part === args['PART']).position);
-            util.target.setXY(x, y, false);
+            // console.log(this.poseState);
+            // console.log(args);
+            const pt = this.poseState.keypoints.find(point => point.name === args['PART'])
+            // console.log(pt);
+            if (pt) {
+                if (pt.score > 0.2) {
+                    // console.log(pt.x, pt.y);
+                    const {x, y} = this.tfCoordsToScratch({"x": pt.x, "y": pt.y});
+                    util.target.setXY(x, y, false);    
+                }
+            }
+            
         }
     }
 
@@ -640,7 +672,7 @@ class Scratch3PoseNetBlocks {
         return this.tfCoordsToScratch({y: this.poseState.keypoints.find(point => point.part === args['PART']).position.y}).y;
     }
 
-    tfCoordsToScratch({x, y}) {
+    tfCoordsToScratch({x, y}) {;
         return {x: x - 250, y: 200 - y};
     }
 
