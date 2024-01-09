@@ -17,6 +17,9 @@ function friendlyRound(amount) {
     return Number(amount).toFixed(2);
 }
 
+
+/// TODO: add value reporter blocks of x and y of different joints
+
 /**
  * Icon svg to be displayed in the blocks category menu, encoded as a data URI.
  * @type {string}
@@ -219,7 +222,9 @@ class Scratch3PoseNetBlocks {
     }
 
     async _loop () {
+
         while (true) {
+
             const frame = this.runtime.ioDevices.video.getFrame({
                 format: Video.FORMAT_IMAGE_DATA,
                 dimensions: Scratch3PoseNetBlocks.DIMENSIONS
@@ -227,16 +232,10 @@ class Scratch3PoseNetBlocks {
 
             const time = +new Date();
             if (frame) {
+                this.objectCenters = {"basketball": [], "hoop": []};
                 this.poseStates = await this.estimatePoseOnImage(frame);
                 this.poseState = this.poseStates[0];
-                // await this.spotObjects(frame);
                 this.currImage = frame;
-                // var boundingBoxes = await objectList[2].array();
-                // console.log("=============", boundingBoxes);
-                
-                // if (this.objectState) {
-                //     console.log(this.objectState);
-                // }
                 if (this.hasPose()) {
                     this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
                 } else {
@@ -272,21 +271,11 @@ class Scratch3PoseNetBlocks {
     };
 
 
-    async spotObjects(imageElement) {
-        
-        
-        // tf.dispose();
-        // tf.dispose(imageTensor);
-        // return result;
-        // tf.engine().endScope();
-    }
-
     async ensureBodyModelLoaded() {
         if (!this._bodyModel) {
             const moveModel = poseDetection.SupportedModels.MoveNet;
             this._bodyModel = await poseDetection.createDetector(moveModel);
 
-            // const moveModel = poseDetection.SupportedModels.MoveNet;
             // this._bodyModel = await posenet.load();
         }
         return this._bodyModel;
@@ -294,12 +283,12 @@ class Scratch3PoseNetBlocks {
 
     async ensureTaskModelLoaded() {
         if (!this.taskModel) {
-            //this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
-            this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom_new/model.json");
+            this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
         }
         return this.taskModel;
     }
 
+    
     /**
      * Create data for a menu in scratch-blocks format, consisting of an array
      * of objects with text and value properties. The text is a translated
@@ -469,27 +458,14 @@ class Scratch3PoseNetBlocks {
                         },
                     },
                 },
-                /* TODO::: set up confidence threshold setter!!!
+                /// TODO::: set up confidence threshold setter!!!
                 {
                     opcode: 'goToObjects',
-                    text: 'go to [OBJECTS]',
+                    text: 'go to [OBJECT]',
                     blockType: BlockType.COMMAND,
                     isTerminal: false,
                     arguments: {
-                        OBJECTS: {
-                            type: ArgumentType.STRING,
-                            defaultValue: 'basketball',
-                            menu: 'OBJECT'
-                        },
-                    },
-                },*/
-                {
-                    opcode: 'goToObjects',
-                    text: 'go to [OBJECTS]',
-                    blockType: BlockType.COMMAND,
-                    isTerminal: false,
-                    arguments: {
-                        OBJECTS: {
+                        OBJECT: {
                             type: ArgumentType.STRING,
                             defaultValue: 'basketball',
                             menu: 'OBJECT'
@@ -578,13 +554,9 @@ class Scratch3PoseNetBlocks {
 
     goToPart(args, util) {
         if (this.hasPose()) {
-            // console.log(this.poseState);
-            // console.log(args);
             const pt = this.poseState.keypoints.find(point => point.name === args['PART'])
-            // console.log(pt);
             if (pt) {
                 if (pt.score > 0.2) {
-                    // console.log(pt.x, pt.y);
                     const {x, y} = this.tfCoordsToScratch({"x": pt.x, "y": pt.y});
                     util.target.setXY(x, y, false);    
                 }
@@ -593,45 +565,7 @@ class Scratch3PoseNetBlocks {
         }
     }
 
-
-    drawBoxes(boundingBoxes, confids, classes) {
-        console.log("boxes", boundingBoxes);
-        console.log("confids", confids);
-        console.log("classes", classes);
-        console.log(tf.memory());
-
-        var bbs = document.getElementsByClassName("boundingBoxes");
-        while (bbs.length > 0) {
-            bbs[0].remove();
-        }
-
-        for (let i=0; i<100; i++) {
-            if (confids[i] > 0.5) {
-                var x1 = (boundingBoxes[4*i]/416)*480;
-                var y1 = (boundingBoxes[4*i+1]/416)*360;
-                var x2 = (boundingBoxes[4*i+2]/416)*480;
-                var y2 = (boundingBoxes[4*i+3]/416)*360;
-                var w = x2 - x1;
-                var h = y2 - y1;
-                const parentDiv = document.querySelector('.stage_stage_1fD7k');
-                parentDiv.style.position = 'relative';
-
-                const childDiv = parentDiv.querySelector('div');
-                const yellowBox = document.createElement('div');
-                yellowBox.style.border = '1px solid black';
-                yellowBox.style.width = (w * 405).toString()+"px";
-                yellowBox.style.height = (h * 305).toString()+"px";
-                yellowBox.style.bottom = (y1 * 305).toString()+"px";
-                yellowBox.style.left = (x1 * 405).toString()+"px";
-                yellowBox.style.position = 'absolute';
-                yellowBox.classList.add("boundingBoxes");
-
-                childDiv.appendChild(yellowBox);
-            }
-        }
-    }
-
-    async goToObjects(args, util) {        
+     async goToObjects(args, util) {        
         const taskModel = await this.ensureTaskModelLoaded();
         tf.engine().startScope();
         const imageTensor = await this.preprocess(this.currImage);
@@ -647,8 +581,81 @@ class Scratch3PoseNetBlocks {
         
         // tf.dispose(objectList);
         tf.engine().endScope();
+        // console.log(args);
+        const objPos = this.objectCenters[args["OBJECT"]][0];
+        // console.log(this.objectCenters, objPos, args);
+        if (objPos) {
+            console.log(objPos);
+            util.target.setXY(parseInt(objPos[0]), parseInt(objPos[1]), false)    ;
+        }
+        
 
     }
+
+
+    drawBoxes(boundingBoxes, confids, classes) {
+        // console.log("boxes", boundingBoxes);
+        // console.log("confids", confids);
+        // console.log("classes", classes);
+        // console.log(tf.memory());
+
+        var bbs = document.getElementsByClassName("boundingBoxes");
+        while (bbs.length > 0) {
+            bbs[0].remove();
+        }
+        var flagB = 0;
+        var flagH = 0;
+        var flagP = 0;
+
+        for (let i=0; i<100; i++) {
+            if (confids[i] > 0.5) {
+                var x1 = (boundingBoxes[4*i]/416)*480;
+                var y1 = (boundingBoxes[4*i+1]/416)*360;
+                var x2 = (boundingBoxes[4*i+2]/416)*480;
+                var y2 = (boundingBoxes[4*i+3]/416)*360;
+                // var w = x2 - x1;
+                // var h = y2 - y1;
+                // const parentDiv = document.querySelector('.stage_stage_1fD7k');
+                // parentDiv.style.position = 'relative';
+
+                // const childDiv = parentDiv.querySelector('div');
+                // const yellowBox = document.createElement('div');
+                // yellowBox.style.border = '1px solid black';
+                // yellowBox.style.width = (w * 405).toString()+"px";
+                // yellowBox.style.height = (h * 305).toString()+"px";
+                // yellowBox.style.top = (y1 * 305).toString()+"px";
+                // yellowBox.style.left = (x1 * 405).toString()+"px";
+                // yellowBox.style.position = 'absolute';
+                // yellowBox.classList.add("boundingBoxes");
+
+                //  childDiv.appendChild(yellowBox);
+
+                if(classes[i] == 0) {
+                    // if(flagB == 0)
+                    // {
+                    //     this.objectCenters["basketball"] = [];
+                    // }
+                    // flagB = 1;
+                    this.objectCenters["basketball"].push([((x1 + x2)/2) * 405 - 250, 200 - ((y1 + y2)/2) * 305]);
+                }
+
+                else if(classes[i] == 1) {
+                    // if(flagH == 0)
+                    // {
+                    //     this.objectCenters["hoop"] = [];
+                    // }
+                    // flagH = 1;
+                    this.objectCenters["hoop"].push([((x1 + x2)/2) * 405 - 250, 200 -((y1 + y2)/2) * 305]);
+                }
+            }
+        }
+        // if (this.objectCenters["basketball"].length > 0) {
+            // console.log("Basketball: ", this.objectCenters);
+        // }
+        
+    }
+
+   
 
     hasPose() {
         return this.poseState && this.poseState.keypoints && this.poseState.score > 0.01;
@@ -672,7 +679,7 @@ class Scratch3PoseNetBlocks {
         return this.tfCoordsToScratch({y: this.poseState.keypoints.find(point => point.part === args['PART']).position.y}).y;
     }
 
-    tfCoordsToScratch({x, y}) {;
+    tfCoordsToScratch({x, y}) {
         return {x: x - 250, y: 200 - y};
     }
 
