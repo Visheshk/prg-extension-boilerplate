@@ -530,9 +530,9 @@ class Scratch3PoseNetBlocks {
                     acceptReporters: true,
                     items: [
                         {text: 'basketball', value: 'basketball'},
-                        {text: 'sports ball', value: 'sports ball'},
-                        {text: 'person', value: 'person'},
-                        {text: 'water bottle', value: 'water bottle'}
+                        // {text: 'sports ball', value: 'sports ball'},
+                        // {text: 'person', value: 'person'},
+                        {text: 'hoop', value: 'hoop'}
                     ]
                 },
 
@@ -585,8 +585,8 @@ class Scratch3PoseNetBlocks {
         const objPos = this.objectCenters[args["OBJECT"]][0];
         // console.log(this.objectCenters, objPos, args);
         if (objPos) {
-            console.log(objPos);
-            util.target.setXY(parseInt(objPos[0]), parseInt(objPos[1]), false)    ;
+            // console.log(objPos);
+            util.target.setXY(parseInt(objPos.x), parseInt(objPos.y), false)    ;
         }
         
 
@@ -599,6 +599,7 @@ class Scratch3PoseNetBlocks {
         // console.log("classes", classes);
         // console.log(tf.memory());
 
+        debugBox = false;
         var bbs = document.getElementsByClassName("boundingBoxes");
         while (bbs.length > 0) {
             bbs[0].remove();
@@ -610,48 +611,39 @@ class Scratch3PoseNetBlocks {
         for (let i=0; i<100; i++) {
             if (confids[i] > 0.5) {
                 var x1 = (boundingBoxes[4*i]/416)*480;
-                var y1 = (boundingBoxes[4*i+1]/416)*360;
+                var y1 = (boundingBoxes[4*i+1]/416)*480;
                 var x2 = (boundingBoxes[4*i+2]/416)*480;
-                var y2 = (boundingBoxes[4*i+3]/416)*360;
-                // var w = x2 - x1;
-                // var h = y2 - y1;
-                // const parentDiv = document.querySelector('.stage_stage_1fD7k');
-                // parentDiv.style.position = 'relative';
+                var y2 = (boundingBoxes[4*i+3]/416)*480;
+                var center = {"x": (((x1 + x2)/2) * 405) - 250, "y": 200 - (((y1 + y2)/2) * 305)};
 
-                // const childDiv = parentDiv.querySelector('div');
-                // const yellowBox = document.createElement('div');
-                // yellowBox.style.border = '1px solid black';
-                // yellowBox.style.width = (w * 405).toString()+"px";
-                // yellowBox.style.height = (h * 305).toString()+"px";
-                // yellowBox.style.top = (y1 * 305).toString()+"px";
-                // yellowBox.style.left = (x1 * 405).toString()+"px";
-                // yellowBox.style.position = 'absolute';
-                // yellowBox.classList.add("boundingBoxes");
+                if (debugBox) {
+                    var w = x2 - x1;
+                    var h = y2 - y1;
+                    const parentDiv = document.querySelector('.stage_stage_1fD7k');
+                    parentDiv.style.position = 'relative';
 
-                //  childDiv.appendChild(yellowBox);
+                    const childDiv = parentDiv.querySelector('div');
+                    const yellowBox = document.createElement('div');
+                    yellowBox.style.border = '1px solid black';
+                    yellowBox.style.width = (w * 405).toString()+"px";
+                    yellowBox.style.height = (h * 305).toString()+"px";
+                    yellowBox.style.top = (y1 * 305).toString()+"px";
+                    yellowBox.style.left = (x1 * 405).toString()+"px";
+                    yellowBox.style.position = 'absolute';
+                    yellowBox.classList.add("boundingBoxes");
 
-                if(classes[i] == 0) {
-                    // if(flagB == 0)
-                    // {
-                    //     this.objectCenters["basketball"] = [];
-                    // }
-                    // flagB = 1;
-                    this.objectCenters["basketball"].push([((x1 + x2)/2) * 405 - 250, 200 - ((y1 + y2)/2) * 305]);
+                     childDiv.appendChild(yellowBox);
+                 }
+
+                if (classes[i] == 0) {
+                    this.objectCenters["basketball"].push(center);
                 }
 
                 else if(classes[i] == 1) {
-                    // if(flagH == 0)
-                    // {
-                    //     this.objectCenters["hoop"] = [];
-                    // }
-                    // flagH = 1;
-                    this.objectCenters["hoop"].push([((x1 + x2)/2) * 405 - 250, 200 -((y1 + y2)/2) * 305]);
+                    this.objectCenters["hoop"].push(center);
                 }
             }
         }
-        // if (this.objectCenters["basketball"].length > 0) {
-            // console.log("Basketball: ", this.objectCenters);
-        // }
         
     }
 
