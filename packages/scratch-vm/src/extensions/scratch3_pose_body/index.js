@@ -283,7 +283,7 @@ class Scratch3PoseNetBlocks {
 
     async ensureTaskModelLoaded() {
         if (!this.taskModel) {
-            this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
+            // this.taskModel = await tf.loadGraphModel("https://raw.githubusercontent.com/Adit31/Explorer_Treat/master/best_web_model_custom/model.json");
         }
         return this.taskModel;
     }
@@ -453,25 +453,51 @@ class Scratch3PoseNetBlocks {
                     arguments: {
                         PART: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'right shoulder',
+                            defaultValue: 'nose',
                             menu: 'PART'
                         },
                     },
                 },
-                /// TODO::: set up confidence threshold setter!!!
                 {
-                    opcode: 'goToObjects',
-                    text: 'go to [OBJECT]',
-                    blockType: BlockType.COMMAND,
-                    isTerminal: false,
+                    opcode: 'posePositionX',
+                    text: 'x position of [PART]',
+                    blockType: BlockType.REPORTER,
+                    isTerminal: true,
                     arguments: {
-                        OBJECT: {
+                        PART: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'basketball',
-                            menu: 'OBJECT'
+                            defaultValue: 'nose',
+                            menu: 'PART'
                         },
-                    },
+                    }
                 },
+                {
+                    opcode: 'posePositionY',
+                    text: 'y position of [PART]',
+                    blockType: BlockType.REPORTER,
+                    isTerminal: true,
+                    arguments: {
+                        PART: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'nose',
+                            menu: 'PART'
+                        },
+                    }
+                },
+                /// TODO::: set up confidence threshold setter!!!
+                // {
+                //     opcode: 'goToObjects',
+                //     text: 'go to [OBJECT]',
+                //     blockType: BlockType.COMMAND,
+                //     isTerminal: false,
+                //     arguments: {
+                //         OBJECT: {
+                //             type: ArgumentType.STRING,
+                //             defaultValue: 'basketball',
+                //             menu: 'OBJECT'
+                //         },
+                //     },
+                // },
                 '---',
                 {
                     opcode: 'videoToggle',
@@ -552,6 +578,8 @@ class Scratch3PoseNetBlocks {
         };
     }
 
+    // getPartLocation
+
     goToPart(args, util) {
         if (this.hasPose()) {
             const pt = this.poseState.keypoints.find(point => point.name === args['PART'])
@@ -561,7 +589,18 @@ class Scratch3PoseNetBlocks {
                     util.target.setXY(x, y, false);    
                 }
             }
-            
+        }
+        else {
+
+        }
+    }
+
+    xLocationReporter(args, util) {
+        if (this.hasPose()) {
+            args['PART']
+        }
+        else {
+            return 0;
         }
     }
 
@@ -650,6 +689,7 @@ class Scratch3PoseNetBlocks {
    
 
     hasPose() {
+        // console.log(this.poseState)
         return this.poseState && this.poseState.keypoints && this.poseState.score > 0.01;
     }
 
@@ -659,7 +699,13 @@ class Scratch3PoseNetBlocks {
      * @returns {number} class name if video frame matched, empty number if model not loaded yet
      */
     posePositionX(args, util) {
-        return this.tfCoordsToScratch({x: this.poseState.keypoints.find(point => point.part === args['PART']).position.x}).x;
+        // this.poseState.keypoints.find(point => point.name === args['PART'])
+        if (this.hasPose()){
+            return this.tfCoordsToScratch({x: this.poseState.keypoints.find(point => point.name === args['PART']).x}).x;
+        }
+        else {
+            return 0
+        }
     }
 
     /**
@@ -668,7 +714,12 @@ class Scratch3PoseNetBlocks {
      * @returns {number} class name if video frame matched, empty number if model not loaded yet
      */
     posePositionY(args, util) {
-        return this.tfCoordsToScratch({y: this.poseState.keypoints.find(point => point.part === args['PART']).position.y}).y;
+        if (this.hasPose()){
+            return this.tfCoordsToScratch({y: this.poseState.keypoints.find(point => point.name === args['PART']).y}).y;
+        }
+        else {
+            return 0;
+        }
     }
 
     tfCoordsToScratch({x, y}) {
