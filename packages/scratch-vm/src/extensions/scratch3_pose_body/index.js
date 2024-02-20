@@ -484,6 +484,30 @@ class Scratch3PoseNetBlocks {
                         },
                     }
                 },
+                {
+                    opcode: 'partAngle',
+                    text: 'angle between [PART], [PART2] and [PART3]',
+                    blockType: BlockType.REPORTER,
+                    isTerminal: true,
+                    arguments: {
+                        PART: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'nose',
+                            menu: 'PART'
+                        },
+                        PART2: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'left_shoulder',
+                            menu: 'PART'
+                        },
+                        PART3: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'left_hip',
+                            menu: 'PART'
+                        },
+                    }
+                },
+
                 /// TODO::: set up confidence threshold setter!!!
                 // {
                 //     opcode: 'goToObjects',
@@ -686,8 +710,6 @@ class Scratch3PoseNetBlocks {
         
     }
 
-   
-
     hasPose() {
         // console.log(this.poseState)
         return this.poseState && this.poseState.keypoints && this.poseState.score > 0.01;
@@ -716,6 +738,31 @@ class Scratch3PoseNetBlocks {
     posePositionY(args, util) {
         if (this.hasPose()){
             return this.tfCoordsToScratch({y: this.poseState.keypoints.find(point => point.name === args['PART']).y}).y;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    partAngle(args, util) {
+        if (this.hasPose()){
+            p1 = this.poseState.keypoints.find(point => point.name === args['PART']);
+            p2 = this.poseState.keypoints.find(point => point.name === args['PART2']);
+            p3 = this.poseState.keypoints.find(point => point.name === args['PART3']);
+            if (p1.score > 0.2 && p2.score > 0.2 && p3.score) {
+            // pt1 = tfCoordsToScratch()
+                console.log(p1, p2, p3);
+                p12 = Math.sqrt(Math.pow((p2.x - p1.x),2)+ Math.pow((p2.y - p1.y),2));
+                p23 = Math.sqrt(Math.pow((p2.x - p3.x),2)+ Math.pow((p2.y - p1.y),2));
+                p13 = Math.sqrt(Math.pow((p3.x - p1.x),2)+ Math.pow((p3.y - p1.y),2));
+                ang = Math.acos(( (p23 * p23) + (p12 * p12) - (p13 * p13)) / (2 * p23 * p12));
+
+                // Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
+                ang2 = ang * 180 / Math.PI
+                console.log(ang2);
+                return ang2;
+            }
+            // return this.tfCoordsToScratch({y: this.poseState.keypoints.find(point => point.name === args['PART']).y}).y;
         }
         else {
             return 0;
