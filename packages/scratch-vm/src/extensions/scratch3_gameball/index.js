@@ -89,25 +89,34 @@ class GameballExt {
         
         this.robot = this;
         this.accelerometer = {"1": {"x": -1, "y": -1, "z": -1}, "2": {"x": -1, "y": -1, "z": -1}}
+        this.gameballs = {};
+        this.connectedGameballs = ["---"];
         
         this._mStatus = 1;
         this._mDevice = null;
         this._mServices = null;
 
-        this.dist_read  = 0;
-        this.a_button = 0;
-        this.b_button = 0;
-        this.left_line = 0;
-        this.right_line = 0;
-        this.last_reading_time = 0;
+        // this.dist_read  = 0;
+        // this.a_button = 0;
+        // this.b_button = 0;
+        // this.left_line = 0;
+        // this.right_line = 0;
+        // this.last_reading_time = 0;
         this.lastConnectCheck = 0;
         this.chargeCharacteristic = null;
         
         this.scratch_vm.on('PROJECT_STOP_ALL', this.resetRobot.bind(this));
         this.scratch_vm.on('CONNECT_MICROBIT_ROBOT', this.connectToBLE.bind(this));
         
-        console.log("Version: adding clear led display");
-        this._loop();
+        // console.log("Version: adding clear led display");
+        // this._loop();
+    }
+
+
+    getConnectedGameballs () {
+        // if (Object.keys(this.gameballs).length == 0) {
+        return this.connectedGameballs
+        // }
     }
 
     async _loop() {
@@ -158,208 +167,6 @@ class GameballExt {
                     blockType: BlockType.BUTTON,
                     text: 'Connect Gameball'
                 },
-                /*{
-                    opcode: 'sendCommand',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.sendCommand',
-                        default: 'send comand [COMMAND]',
-                        description: 'Send a particular command to the robot'
-                    }),
-                    arguments: {
-                        COMMAND: {
-                            type:ArgumentType.STRING,
-                            defaultValue: "A#"
-                        }
-                    }
-                },*/
-                '---',
-                /*
-                {
-                    opcode: 'writeLedString',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.writeLEDString',
-                        default: 'display text [TEXT]',
-                        description: 'Write string to LED display'
-                    }),
-                    arguments: {
-                        TEXT: {
-                            type: ArgumentType.STRING,
-                            defaultValue: "Hello"
-                        }
-                    }
-                },
-                {
-                    opcode: 'setLedDisplay',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.setLEDDisplay',
-                        default: 'display [MATRIX]',
-                        description: 'Set the LED display'
-                    }),
-                    arguments: {
-                        MATRIX: {
-                            type: ArgumentType.MATRIX,
-                            defaultValue: '0101010101100010101000100'
-                        }
-                    }
-                },
-                {
-                    opcode: 'clearLedDisplay',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.clearLEDDisplay',
-                        default: 'clear display',
-                        description: 'Clear LED display'
-                    })
-                },
-                '---',
-                {
-                    opcode: 'setRgbLedColor',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.setLEDColor',
-                        default: 'set headlight color [COLOR]',
-                        description: 'Set the RGB headlight color'
-                    }),
-                    arguments: {
-                        COLOR: {
-                            type:ArgumentType.STRING,
-                            menu: 'COLORS',
-                            defaultValue: "random"
-                        }    
-                    }
-                },
-                {
-                    opcode: 'rgbLedOff',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.ledOff',
-                        default: 'turn headlights off',
-                        description: 'Turn off the LED'
-                    }),
-                    arguments: { }
-                },
-                '---',
-                {
-                    opcode: 'drive',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.driveForwardBackward',
-                        default: 'drive [DIR] for [NUM] seconds',
-                        description: 'Send command to robot to drive forward or backward'
-                    }),
-                    arguments: {
-                        NUM: {
-                            type:ArgumentType.NUMBER,
-                            defaultValue: 1
-                        },
-                        DIR: {
-                            type:ArgumentType.String,
-                            menu: 'DIRS',
-                            defaultValue: _drive[0]
-                        }
-                    }
-                },
-                {
-                    opcode: 'turn',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.turnRightLeft',
-                        default: 'turn [TURN] for [NUM] seconds',
-                        description: 'Send command to robot to turn right or left'
-                    }),
-                    arguments: {
-                        NUM: {
-                            type:ArgumentType.NUMBER,
-                            defaultValue: 1
-                        },
-                        TURN: {
-                            type:ArgumentType.String,
-                            menu: 'TURNS',
-                            defaultValue: _turn[0]
-                        }
-                    }
-                },
-                {
-                    opcode: 'stopMotors',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'arduinoBot.stopMotors',
-                        default: 'stop motors',
-                        description: 'Stop both motors on the robot'
-                    })
-                },
-                '---',
-                {
-                    opcode: 'playMusic',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'arduinoBot.playMusic',
-                        default: 'play song [SONG]',
-                        description: 'Play song using the piezo'
-                    }),
-                    arguments: {
-                        SONG: {
-                            type:ArgumentType.STRING,
-                            menu: 'SONGS',
-                            defaultValue: _songs[0]
-                        }    
-                    }
-                },
-                {
-                    opcode: 'playNote',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'microbitBot.playNote',
-                        default: 'play note [NOTE] for [NUM] seconds',
-                        description: 'Play note using the piezo'
-                    }),
-                    arguments: {
-                        NUM: {
-                            type:ArgumentType.NUMBER,
-                            defaultValue: 1
-                        },
-                        NOTE: {
-                            type:ArgumentType.NOTE,
-                            defaultValue: 60
-                        }    
-                    }
-                },
-                '---',
-                {
-                    opcode: 'whenButtonPressed',
-                    text: formatMessage({
-                        id: 'arduinoBot.readButtonStatus',
-                        default: 'when [BUTTON] button pressed',
-                        description: 'Trigger when buttons on microbit are pressed'
-                    }),
-                    blockType: BlockType.HAT,
-                    arguments: {
-                        BUTTON: {
-                            type:ArgumentType.String,
-                            menu: 'BUTTON_STATES',
-                            defaultValue: _button[0]
-                        }
-                    }
-                },
-                {
-                    opcode: 'readLineStatus',
-                    blockType: BlockType.BOOLEAN,
-                    text: formatMessage({
-                        id: 'arduinoBot.readLineSensorStatus',
-                        default: 'line detected on [LINE]',
-                        description: 'detect line sensor state'
-                    }),
-                    arguments: {
-                        LINE: {
-                            type:ArgumentType.String,
-                            menu: 'LINE_STATES',
-                            defaultValue: _line_states[0]
-                        }
-                    }
-                },*/
                 {
                     opcode: 'readAccel',
                     blockType: BlockType.REPORTER,
@@ -380,16 +187,43 @@ class GameballExt {
                             defaultValue: 'x',
                         },
                     },
+                },
+                {
+                    opcode: 'readMultiAccel',
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: 'gameball.readMultiAccel',
+                        default: 'acceleration [GAMEBALL] [NUMBER] [AXIS]',
+                        description: 'Get accelerometer reads from gameball'
+                    }),
+                    arguments: {
+                        GAMEBALL: {
+                            type: ArgumentType.String,
+                            menu: "GBS_CONNECTED",
+                            defaultValue: this.getConnectedGameballs()[0],
+                        },
+                        NUMBER: {
+                            type: ArgumentType.String,
+                            menu: "ACC_NUM",
+                            defaultValue: "1",
+                        },
+                        AXIS: {
+                            type: ArgumentType.String,
+                            menu: "ACC_AXES",
+                            defaultValue: 'x',
+                        },
+                    },
                 }
             ],
             menus: {
+                GBS_CONNECTED: "getConnectedGameballs",
                 ACC_NUM: {
                     acceptReporters: true,
                     items: ['1', '2'],
                 },
                 ACC_AXES: {
                     acceptReporters: true,
-                    items: ['x', 'y', 'z'],
+                    items: ['x', 'y', 'z', 'strength'],
                 }
                 // SONGS: {
                 //     acceptReporters: false,
@@ -478,20 +312,61 @@ class GameballExt {
         }
     }
 
+    getStrength(acc) {
+        return (acc["x"]**2 + acc["y"]**2 + acc["z"]**2) ** 0.5;
+    }
+
+    createChangeListener(event) {
+        console.log(event);
+        console.log(this);
+        devName = this.devName
+        return function (event, devName) {
+            console.log(event)
+            console.log(devName);
+        }
+    }
+
     handleDataChange(event) {
       tb = event.target.value.buffer;
-      // console.log(tb);
+      console.log(tb);
+      // console.log(this);
+      // console.log(event);
       tba = new Uint16Array(tb);
-      console.log(tba);
-      console.log(tba[1], tba[2], tba[3]);
+      // console.log(tba);
+      // console.log(tba[1], tba[2], tba[3]);
       // console.log(this._mDevice);
-      console.log(accel);
+      // console.log(accel);
       // this.accelerometer["1"] =  {"x": tba[1], "y": tba[2], "z": tba[3]}
       // this.accelerometer["2"] = {"x": tba[4], "y": tba[5], "z": tba[6]};
-      accel["1"] =  {"x": tba[1], "y": tba[2], "z": tba[3]}
-      accel["2"] = {"x": tba[4], "y": tba[5], "z": tba[6]};
+      // console.log(tba.)
+      console.log(this.context);
+
+      // console.log(gameballs);
+      // gbNames = Object.keys(this.gameballs);
+      // devName = 
+      console.log(event.target.service.device.name);
+      devName = event.target.service.device.name;
+      if (!(devName in this.context.gameballs)) {
+        if (this.context.connectedGameballs.indexOf("---") != -1) {
+            this.context.connectedGameballs = [];
+        }
+        this.context.gameballs[devName] = {"1": {}, "2": {}};
+        // this.context.gameballs[this.devName] = {"1": {"x": -1, "y": -1, "z": -1}, "2": {"x": -1, "y": -1, "z": -1}};
+        if (this.context.connectedGameballs.indexOf(devName) == -1){
+            this.context.connectedGameballs.push(devName);
+        }
+      }
+
+      accel["1"] =  {"x": tba[1] *0.008, "y": tba[2]*0.008, "z": tba[3]*0.008}
+      accel["2"] = {"x": tba[4]*0.008, "y": tba[5]*0.008, "z": tba[6] *0.008};
+      accel["1"]["strength"] = this.context.getStrength(accel["1"]);
+      accel["2"]["strength"] = this.context.getStrength(accel["2"]);
+
+      this.context.gameballs[devName]["1"] = {"x": tba[1] *0.008, "y": tba[2]*0.008, "z": tba[3]*0.008, "strength": this.context.getStrength(tba.slice(1,4)) * 0.008};
+      this.context.gameballs[devName]["2"] = {"x": tba[4] *0.008, "y": tba[5]*0.008, "z": tba[6]*0.008, "strength": this.context.getStrength(tba.slice(1,4)) * 0.008};
+
       // console.log(this.accelerometer);
-      pushObj = {}
+      pushObj = {};
       tba.map((c, index) => pushObj["a" + String(index)] = c);
       pushObj["time"] = new Date().getTime();
       pushObj["tag"] = -1;
@@ -504,17 +379,29 @@ class GameballExt {
         // console.log();
         // console.log(args.DIR);
         // if (args.DEVICE in this.accelerometer) {
-            console.log(this.accelerometer["1"]);
-            return accel[args.NUMBER][args.AXIS];
+            // console.log(this.accelerometer["1"]);
+        return accel[args.NUMBER][args.AXIS];
         // }
         // else {
         //     return null;
         // }
     }
 
-    async startReadingData(ch) {
+    async readMultiAccel(args) {
+        if (args.GAMEBALL != "---") {
+            return this.gameballs[args.GAMEBALL][args.NUMBER][args.AXIS];
+        }
+        else {
+            return -1
+        }
+        
+    }
+
+    async startReadingData(ch, devName) {
         await ch.startNotifications();
-        await ch.addEventListener('characteristicvaluechanged', this.handleDataChange);
+        // await ch.addEventListener('characteristicvaluechanged', this.createChangeListener({"context": this, "devName": devName}));
+
+        await ch.addEventListener('characteristicvaluechanged', this.handleDataChange.bind({"context": this, "devName": devName}));
         // console.log(ch);
         // console.log(ch[1], ch[2], ch[3]);
         
@@ -553,6 +440,7 @@ class GameballExt {
         const server = await device.gatt.connect();
         this._mServices = await server.getPrimaryServices();
         const services = await server.getPrimaryServices();
+        // console.log(server)
         gameService = await server.getPrimaryService(gameballUuid["gameballService"][0]);
         refreshCharacteristic = await gameService.getCharacteristic(gameballUuid["devRef"][0]);
         a1Chars = await this.startAccel("accel1", Uint8Array.of(0x197), Uint16Array.of(135), server);
@@ -568,7 +456,11 @@ class GameballExt {
 
         await streamChar.writeValue(Uint8Array.of(3));
         streamRead = await sService.getCharacteristic("a54d785d-d676-4cda-b794-ca049d4e044b");
-        this.startReadingData(streamRead);
+        let devName = String(Object.keys(this.gameballs).length);
+        if (server.device.name) {
+            devName = server.device.name;
+        }
+        this.startReadingData(streamRead, devName);
         console.log(services);
         return services;
     }

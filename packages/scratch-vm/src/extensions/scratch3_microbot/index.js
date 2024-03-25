@@ -329,10 +329,11 @@ class MicrobitRobot {
                     }
                     if (this._mServices.accelerometerService) {
                         console.log("starting accel service");
-                        this._mServices.accelerometerService.addEventListener(
-                            "accelerometerdatachanged",
-                            this.updateAccelerometer.bind(this, deviceName = deviceName)
-                        );
+                        // this._mServices.accelerometerService.addEventListener(
+                        //     "accelerometerdatachanged",
+                        //     this.updateAccelerometer.bind([this, deviceName])
+                            // this.updateAccelerometer([this, deviceName])
+                        // );
                     }
                     if (this._mServices.uartService) {
                         console.log("uart service found");
@@ -534,8 +535,23 @@ class MicrobitRobot {
     //     }
     // }
 
-    updateAccelerometer(event, deviceName) {
-        // console.log(event);
+    updateAccelerometer(event) {
+        // context = this;
+        // return function (event) {
+        //     console.log(event);
+        //     console.log(context);
+        // }
+        console.log(event);
+        accDeets = event.detail;
+        console.log(this);
+        devName = this[1];
+        if (!(devName in this[0].accelerometer)) {
+                this[0].accelerometer[devName] = {};
+            }
+        this[0].accelerometer[devName]["x"] = accDeets["x"];
+        this[0].accelerometer[devName]["y"] = accDeets["y"];
+        this[0].accelerometer[devName]["z"] = accDeets["z"];
+        this[0].accelerometer[devName]["strength"] = parseInt((accDeets["x"]**2 + accDeets["y"]**2 + accDeets["z"]**2)**0.5);
         // var devName = this._mDevice.name.substr(this._mDevice.name.length - 6, 5);
         // this.accelerometer = event.detail;
         // console.log(JSON.stringify(event.detail) + deviceName);

@@ -274,7 +274,7 @@ class Scratch3PoseNetBlocks {
     async ensureBodyModelLoaded() {
         if (!this._bodyModel) {
             const moveModel = poseDetection.SupportedModels.MoveNet;
-            this._bodyModel = await poseDetection.createDetector(moveModel);
+            this._bodyModel = await poseDetection.createDetector(moveModel, {modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
 
             // this._bodyModel = await posenet.load();
         }
@@ -755,8 +755,12 @@ class Scratch3PoseNetBlocks {
                 p12 = Math.sqrt(Math.pow((p2.x - p1.x),2)+ Math.pow((p2.y - p1.y),2));
                 p23 = Math.sqrt(Math.pow((p2.x - p3.x),2)+ Math.pow((p2.y - p1.y),2));
                 p13 = Math.sqrt(Math.pow((p3.x - p1.x),2)+ Math.pow((p3.y - p1.y),2));
+                cosang = ((p23 * p23) + (p12 * p12) - (p13 * p13)) / (2 * p23 * p12);
                 ang = Math.acos(( (p23 * p23) + (p12 * p12) - (p13 * p13)) / (2 * p23 * p12));
-
+                if (Math.abs(ang) > 1) {
+                    return 180;
+                }
+                console.log(p12, p23, p13, ang, cosang);
                 // Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
                 ang2 = ang * 180 / Math.PI
                 console.log(ang2);
