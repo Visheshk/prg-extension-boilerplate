@@ -311,7 +311,7 @@ class MenuBar extends React.Component {
         );
     }
     handleClickLoadProjectLink() {
-        let templateLink = "https://www.dropbox.com/s/o8jegh940y7f7qc/SimpleProject.sb3";
+        let templateLink = "https://tiilt.northwestern.edu/scratch/projects/impossible_shakeoff.sb3";
         let url = window.prompt("Enter project url (e.g. from Dropbox or Github)", templateLink);
         if (url != null && url != "") {   
             const readyToReplaceProject = this.props.confirmReadyToReplaceProject(

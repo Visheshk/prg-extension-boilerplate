@@ -88,6 +88,7 @@ class GameballExt {
         this.scratch_vm.connectPeripheral(EXTENSION_ID, 0);
         
         this.robot = this;
+        this.thresholdVals = {"low": 155, "medium": 138, "high": 133}
         this.accelerometer = {"1": {"x": -1, "y": -1, "z": -1}, "2": {"x": -1, "y": -1, "z": -1}}
         this.gameballs = {};
         this.connectedGameballs = ["---"];
@@ -96,20 +97,12 @@ class GameballExt {
         this._mDevice = null;
         this._mServices = null;
 
-        // this.dist_read  = 0;
-        // this.a_button = 0;
-        // this.b_button = 0;
-        // this.left_line = 0;
-        // this.right_line = 0;
-        // this.last_reading_time = 0;
         this.lastConnectCheck = 0;
         this.chargeCharacteristic = null;
         
         this.scratch_vm.on('PROJECT_STOP_ALL', this.resetRobot.bind(this));
         this.scratch_vm.on('CONNECT_MICROBIT_ROBOT', this.connectToBLE.bind(this));
-        
-        // console.log("Version: adding clear led display");
-        // this._loop();
+
     }
 
 
@@ -120,29 +113,11 @@ class GameballExt {
     }
 
     async _loop() {
-        // while (true) {
-        //     var timeNow = new Date().getTime();
-        //     if ((timeNow - 10000) > this.lastConnectCheck && this.chargeCharacteristic != null) {
-        //         console.log("connect loop happening");
-        //         cc = await this.capCharacteristic.readValue();
-        //         if (cc == undefined) {
-        //             this.chargeCharacteristic = null;
-        //         }
-        //         else {
-        //             ccVal = new Uint16Array(cc.buffer)[0] *(3/(2^12))
-        //             console.log(ccVal);
-        //             this.lastConnectCheck = timeNow;    
-        //         }
-                
-        //     }
-        // }
 
     }
 
     resetRobot() {
-        // this.stopMotors();
-        // this.rgbLedOff();
-        // this.stopMusic();
+
       }
 
 
@@ -213,7 +188,28 @@ class GameballExt {
                             defaultValue: 'x',
                         },
                     },
-                }
+                },
+                {
+                    opcode: "setThreshold",
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: "gameball.setThreshold",
+                        default: "set sensitivity [GAMEBALL] [OPTION]",
+                        description: "Change gameball trigger threshold",
+                    }),
+                    arguments: {
+                        GAMEBALL: {
+                            type: ArgumentType.String,
+                            menu: "GBS_CONNECTED",
+                            defaultValue: this.getConnectedGameballs()[0],
+                        },
+                        OPTION: {
+                            type: ArgumentType.STRING,
+                            menu:"THRESH_OPTIONS",
+                            defaultValue: "medium",
+                        },
+                    },
+                },
             ],
             menus: {
                 GBS_CONNECTED: "getConnectedGameballs",
@@ -224,6 +220,10 @@ class GameballExt {
                 ACC_AXES: {
                     acceptReporters: true,
                     items: ['x', 'y', 'z', 'strength'],
+                },
+                THRESH_OPTIONS: {
+                    acceptReporters: true,
+                    items: [ 'low', 'medium', 'high'],
                 }
                 // SONGS: {
                 //     acceptReporters: false,
@@ -300,7 +300,7 @@ class GameballExt {
             // }
         // } 
 
-        console.log(capCharacteristic);
+        // console.log(capCharacteristic);
         cc = await capCharacteristic.readValue();
         ccVal = new Uint16Array(cc.buffer)[0] *(3/(2^12))
         console.log(ccVal);
@@ -312,8 +312,24 @@ class GameballExt {
         }
     }
 
+    writeLedString(args) {
+        let text = args.TEXT;
+        console.log("Write led string: " + text);
+        if (this._mServices) this._mServices.ledService.writeText(text);
+    }
+
+    async setThreshold(args) {
+        args.GAMEBALL
+        args.OPTION
+        
+        this.startAccel("accel1", Uint8Array.of(0x197), Uint16Array.of(this.thresholdVals[args.OPTION]), this.gameballs[args.GAMEBALL]["server"]);
+    }
+
     getStrength(acc) {
-        return (acc["x"]**2 + acc["y"]**2 + acc["z"]**2) ** 0.5;
+        acc = Object.values(acc)
+        strength = (acc[0]**2 + acc[1]**2 + acc[2]**2) ** 0.5
+        // console.log(strength);
+        return strength;
     }
 
     createChangeListener(event) {
@@ -328,43 +344,30 @@ class GameballExt {
 
     handleDataChange(event) {
       tb = event.target.value.buffer;
-      console.log(tb);
-      // console.log(this);
-      // console.log(event);
       tba = new Uint16Array(tb);
       // console.log(tba);
-      // console.log(tba[1], tba[2], tba[3]);
-      // console.log(this._mDevice);
-      // console.log(accel);
-      // this.accelerometer["1"] =  {"x": tba[1], "y": tba[2], "z": tba[3]}
-      // this.accelerometer["2"] = {"x": tba[4], "y": tba[5], "z": tba[6]};
-      // console.log(tba.)
-      console.log(this.context);
-
-      // console.log(gameballs);
-      // gbNames = Object.keys(this.gameballs);
-      // devName = 
-      console.log(event.target.service.device.name);
+      
       devName = event.target.service.device.name;
-      if (!(devName in this.context.gameballs)) {
-        if (this.context.connectedGameballs.indexOf("---") != -1) {
-            this.context.connectedGameballs = [];
-        }
-        this.context.gameballs[devName] = {"1": {}, "2": {}};
+      // if (!(devName in this.context.gameballs)) {
+        // if (this.context.connectedGameballs.indexOf("---") != -1) {
+        //     this.context.connectedGameballs = [];
+        // }
+        // this.context.gameballs[devName] = {"1": {}, "2": {}};
         // this.context.gameballs[this.devName] = {"1": {"x": -1, "y": -1, "z": -1}, "2": {"x": -1, "y": -1, "z": -1}};
-        if (this.context.connectedGameballs.indexOf(devName) == -1){
-            this.context.connectedGameballs.push(devName);
-        }
-      }
+        // if (this.context.connectedGameballs.indexOf(devName) == -1){
+        //     this.context.connectedGameballs.push(devName);
+        // }
+      // }
 
       accel["1"] =  {"x": tba[1] *0.008, "y": tba[2]*0.008, "z": tba[3]*0.008}
       accel["2"] = {"x": tba[4]*0.008, "y": tba[5]*0.008, "z": tba[6] *0.008};
       accel["1"]["strength"] = this.context.getStrength(accel["1"]);
       accel["2"]["strength"] = this.context.getStrength(accel["2"]);
 
+
       this.context.gameballs[devName]["1"] = {"x": tba[1] *0.008, "y": tba[2]*0.008, "z": tba[3]*0.008, "strength": this.context.getStrength(tba.slice(1,4)) * 0.008};
       this.context.gameballs[devName]["2"] = {"x": tba[4] *0.008, "y": tba[5]*0.008, "z": tba[6]*0.008, "strength": this.context.getStrength(tba.slice(1,4)) * 0.008};
-
+      // console.log(this.context.gameballs);
       // console.log(this.accelerometer);
       pushObj = {};
       tba.map((c, index) => pushObj["a" + String(index)] = c);
@@ -459,6 +462,13 @@ class GameballExt {
         let devName = String(Object.keys(this.gameballs).length);
         if (server.device.name) {
             devName = server.device.name;
+        }
+        if (this.connectedGameballs.indexOf("---") != -1) {
+            this.connectedGameballs = [];
+        }
+        if (this.connectedGameballs.indexOf(devName) == -1){
+            this.connectedGameballs.push(devName);
+            this.gameballs[devName] = {"server": server, "1": {}, "2": {}};
         }
         this.startReadingData(streamRead, devName);
         console.log(services);
