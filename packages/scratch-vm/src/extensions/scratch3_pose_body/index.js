@@ -752,27 +752,37 @@ class Scratch3PoseNetBlocks {
             if (p1.score > 0.2 && p2.score > 0.2 && p3.score) {
             // pt1 = tfCoordsToScratch()
                 // console.log(p1, p2, p3);
-                p12 = Math.sqrt(Math.pow((p2.x - p1.x),2)+ Math.pow((p2.y - p1.y),2));
-                p23 = Math.sqrt(Math.pow((p2.x - p3.x),2)+ Math.pow((p2.y - p3.y),2));
-                p13 = Math.sqrt(Math.pow((p3.x - p1.x),2)+ Math.pow((p3.y - p1.y),2));
-                cosang = ((p23 * p23) + (p12 * p12) - (p13 * p13)) / (2 * p23 * p12);
+                // p12 = Math.sqrt(Math.pow((p2.x - p1.x),2)+ Math.pow((p2.y - p1.y),2));
+                // p23 = Math.sqrt(Math.pow((p2.x - p3.x),2)+ Math.pow((p2.y - p3.y),2));
+                // p13 = Math.sqrt(Math.pow((p3.x - p1.x),2)+ Math.pow((p3.y - p1.y),2));
+                // cosang = ((p23 * p23) + (p12 * p12) - (p13 * p13)) / (2 * p23 * p12);
+
+                ang12 = positiveTanInverse((p1.x - p2.x), (p1.y - p2.y))
+                ang23 = positiveTanInverse((p3.x - p2.x), (p3.y - p2.y))
+
+                function positiveTanInverse(x, y) {
+                    ang = Math.atan2(y, x) * 180 / Math.PI;
+                    if (ang < 0) {
+                        ang += 360;
+                    }
+                    return ang
+                }
+
                 
                 // console.log(p12, p23, p13,cosang);
-                if (Math.abs(cosang) > 1) {
-                    console.log(p1, p2, p3);
-                    console.log(p12, p23, p13,cosang);
-                    cosang = cosang%1;
-                }
-                ang = Math.acos(cosang);
-                // console.log(ang);
-                // if (Math.abs(ang) > 1) {
-                //     return 180;
+                // if (Math.abs(cosang) > 1) {
+                //     console.log(p1, p2, p3);
+                //     console.log(p12, p23, p13,cosang);
+                //     cosang = cosang%1;
                 // }
-                
-                // Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
-                ang2 = ang * 180 / Math.PI
+                // ang = Math.acos(cosang);
+                // ang2 = ang * 180 / Math.PI
+
+                ang123 = ang12 - ang23;
+
+
                 // console.log(ang2);
-                return ang2;
+                return ang123;
             }
             // return this.tfCoordsToScratch({y: this.poseState.keypoints.find(point => point.name === args['PART']).y}).y;
         }
